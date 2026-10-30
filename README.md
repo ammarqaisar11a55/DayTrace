@@ -12,6 +12,10 @@ Everything stays on your computer. There is no account, no cloud service and no 
 
 ![Thirty days as a stack of daily ribbons](docs/screenshots/dashboard-month.png)
 
+![The timeline of a day, with sessions grouped and ready to correct](docs/screenshots/timeline.png)
+
+![Analytics in the dark theme](docs/screenshots/analytics-dark.png)
+
 Screenshots show generated sample data.
 
 ## Features
