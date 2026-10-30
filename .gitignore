@@ -33,3 +33,4 @@ stage/
 .DS_Store
 Thumbs.db
 *.log
+src-tauri/gen/

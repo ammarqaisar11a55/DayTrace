@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+/* Colors are roles, swapped for dark mode in one place. The palette follows a
+   chart recorder: cool paper, dark ink, and one teal pen for what was recorded. */
+:root {
+  color-scheme: light;
+  --paper: #f1f4f2;
+  --sheet: #fbfcfb;
+  --ink: #16211f;
+  --ink-2: #47544f;
+  --ink-3: #5f6c68;
+  --rule: #d6ded9;
+  --rule-strong: #b4c0ba;
+  --pen: #0b6e64;
+  --pen-soft: #d4e8e3;
+  --on-pen: #ffffff;
+  --idle: #8d9a95;
+  --danger: #b3261e;
+  --danger-soft: #f9e0dd;
+  --warn: #8a5a00;
+  --warn-soft: #f6ead0;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #121a19;
+  --sheet: #182321;
+  --ink: #e6edea;
+  --ink-2: #aebdb8;
+  --ink-3: #93a29d;
+  --rule: #2b3836;
+  --rule-strong: #43534f;
+  --pen: #52c4b1;
+  --pen-soft: #1f3a36;
+  --on-pen: #0c1f1c;
+  --idle: #6d7c78;
+  --danger: #f2998f;
+  --danger-soft: #3d2320;
+  --warn: #e5bb6b;
+  --warn-soft: #36301f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --paper: #121a19;
+    --sheet: #182321;
+    --ink: #e6edea;
+    --ink-2: #aebdb8;
+    --ink-3: #93a29d;
+    --rule: #2b3836;
+    --rule-strong: #43534f;
+    --pen: #52c4b1;
+    --pen-soft: #1f3a36;
+    --on-pen: #0c1f1c;
+    --idle: #6d7c78;
+    --danger: #f2998f;
+    --danger-soft: #3d2320;
+    --warn: #e5bb6b;
+    --warn-soft: #36301f;
+  }
+}
+
+@theme inline {
+  --font-sans: "IBM Plex Sans Variable", system-ui, sans-serif;
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-pen: var(--pen);
+  --color-pen-soft: var(--pen-soft);
+  --color-on-pen: var(--on-pen);
+  --color-idle: var(--idle);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* Recorded text should be copyable even though app chrome is not. */
+input,
+textarea,
+.selectable {
+  user-select: text;
+}
+
+:focus-visible {
+  outline: 2px solid var(--pen);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Idle time is hatched so that it never depends on color alone. */
+.hatch-idle {
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--idle) 0 1.5px,
+    transparent 1.5px 4px
+  );
+}
+
+dialog {
+  margin: auto;
+  color: inherit;
+}
+
+dialog::backdrop {
+  background: rgb(10 18 17 / 0.45);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--rule-strong);
+  border: 3px solid var(--paper);
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
