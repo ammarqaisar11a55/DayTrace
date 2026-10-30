@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 
 database = sqlite3.connect(sys.argv[1])
 database.execute("PRAGMA foreign_keys = ON")
+# Entries made earlier in the run would overlap the generated history.
+database.execute("DELETE FROM activity_sessions")
 now_ms = int(time.time() * 1000)
 random.seed(7)
 

@@ -98,8 +98,12 @@ pub fn classify_install(facts: &InstallFacts<'_>) -> InstallMethod {
     }
 }
 
+/// Tauri derives the package name from the product name, so it differs from
+/// the binary's name.
+const DPKG_FILE_LIST: &str = "/var/lib/dpkg/info/day-trace.list";
+
 fn dpkg_owns(executable: &Path) -> bool {
-    std::fs::read_to_string("/var/lib/dpkg/info/daytrace.list")
+    std::fs::read_to_string(DPKG_FILE_LIST)
         .is_ok_and(|files| files.lines().any(|line| Path::new(line) == executable))
 }
 
