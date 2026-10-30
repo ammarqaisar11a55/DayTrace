@@ -1,0 +1,35 @@
+# Dependencies and build output
+node_modules/
+dist/
+target/
+src-tauri/gen/schemas/
+coverage/
+
+# Packaging output
+*.snap
+*.AppImage
+squashfs-root/
+parts/
+prime/
+stage/
+
+# Local data
+*.db
+*.db-wal
+*.db-shm
+.env
+.env.*
+
+# Signing material must never be committed
+*.key
+*.key.pub
+*.pem
+*.pfx
+*.p12
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
