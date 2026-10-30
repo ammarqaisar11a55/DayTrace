@@ -43,3 +43,6 @@ windows = { version = "0.62", features = [
 [dev-dependencies]
 chrono-tz = "0.10"
 tempfile = "3"
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+x11rb = { version = "0.14", features = ["screensaver"] }
