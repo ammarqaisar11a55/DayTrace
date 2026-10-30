@@ -1,0 +1,8 @@
+{
+  "uuid": "daytrace@ammarqaisar11a55.github.io",
+  "name": "DayTrace Focus Integration",
+  "description": "Tells the DayTrace activity tracker which application is focused. It exposes the focused application on the session bus and collects nothing itself.",
+  "shell-version": ["42", "43", "44", "45", "46", "47", "48", "49", "50"],
+  "url": "https://github.com/ammarqaisar11a55/DayTrace",
+  "session-modes": ["user"]
+}
