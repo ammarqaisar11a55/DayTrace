@@ -14,10 +14,10 @@ export interface Settings {
   pollIntervalSecs: number;
   idleThresholdSecs: number;
   collectWindowTitles: boolean;
-  browserIntegration: boolean;
   retentionDays: number;
   theme: Theme;
   startOnLogin: boolean;
+  runInBackground: boolean;
   startHidden: boolean;
   updateChannel: UpdateChannel;
   updateCheckOnStartup: boolean;
@@ -157,7 +157,7 @@ export interface ManualTimerInput {
   categoryId: number | null;
 }
 
-export type ConditionField = "application" | "executablePath" | "windowTitle" | "domain";
+export type ConditionField = "application" | "executablePath" | "windowTitle";
 export type ConditionOperator = "equals" | "contains" | "startsWith" | "endsWith";
 
 export interface Condition {

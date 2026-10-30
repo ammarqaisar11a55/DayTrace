@@ -36,10 +36,11 @@ pub struct Settings {
     pub poll_interval_secs: u32,
     pub idle_threshold_secs: u32,
     pub collect_window_titles: bool,
-    pub browser_integration: bool,
     pub retention_days: u32,
     pub theme: Theme,
     pub start_on_login: bool,
+    /// Keep tracking after the window closes. When off, closing the window quits.
+    pub run_in_background: bool,
     pub start_hidden: bool,
     pub update_channel: UpdateChannel,
     pub update_check_on_startup: bool,
@@ -56,10 +57,10 @@ impl Default for Settings {
             poll_interval_secs: 5,
             idle_threshold_secs: 300,
             collect_window_titles: false,
-            browser_integration: false,
             retention_days: 0,
             theme: Theme::System,
             start_on_login: false,
+            run_in_background: true,
             start_hidden: false,
             update_channel: UpdateChannel::Stable,
             update_check_on_startup: true,
@@ -100,17 +101,15 @@ mod tests {
         let settings = Settings::default();
         assert!(!settings.tracking_enabled);
         assert!(!settings.collect_window_titles);
-        assert!(!settings.browser_integration);
         assert_eq!(settings.idle_threshold_secs, 300);
         assert!(settings.validate().is_ok());
     }
 
     #[test]
     fn out_of_range_values_are_rejected() {
-        let mut settings = Settings::default();
-        settings.poll_interval_secs = 0;
-        assert!(settings.validate().is_err());
-        settings = Settings { idle_threshold_secs: 5, ..Settings::default() };
-        assert!(settings.validate().is_err());
+        let polling = Settings { poll_interval_secs: 0, ..Settings::default() };
+        assert!(polling.validate().is_err());
+        let idle = Settings { idle_threshold_secs: 5, ..Settings::default() };
+        assert!(idle.validate().is_err());
     }
 }

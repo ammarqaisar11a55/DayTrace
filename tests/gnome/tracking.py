@@ -148,6 +148,49 @@ stop(app, signal.SIGTERM)
 rows = sessions()
 check(all(row[6] == 0 for row in rows), "restarting recovers the interrupted session")
 
+before = len(sessions())
+set_settings(collectWindowTitles=False)
+app = start_app()
+time.sleep(4)
+check("DayTrace" in evaluate("JSON.stringify(global.get_window_actors().map(a => a.meta_window.get_title()))"),
+      "the window opens")
+evaluate("global.get_window_actors().map(a => a.meta_window)"
+         ".filter(w => w.get_title() === 'DayTrace').forEach(w => w.delete(global.get_current_time()))")
+time.sleep(2)
+titles = evaluate("JSON.stringify(global.get_window_actors().map(a => a.meta_window.get_title()))")
+check("DayTrace" not in titles, "closing the window removes it")
+check(app.poll() is None, "the application keeps running after its window closes")
+
+activate("Text Editor")
+time.sleep(3)
+activate("Calculator")
+time.sleep(3)
+check(app.poll() is None, "tracking continues in the background")
+
+second = start_app()
+second.wait(timeout=10)
+time.sleep(3)
+check("DayTrace" in evaluate("JSON.stringify(global.get_window_actors().map(a => a.meta_window.get_title()))"),
+      "launching again reopens the window of the running instance")
+stop(app, signal.SIGTERM)
+later = sessions()[before:]
+check(any("Text Editor" in row[0] for row in later) and any("Calculator" in row[0] for row in later),
+      "tracking survives closing the window")
+
+set_settings(runInBackground=False)
+app = start_app()
+time.sleep(4)
+evaluate("global.get_window_actors().map(a => a.meta_window)"
+         ".filter(w => w.get_title() === 'DayTrace').forEach(w => w.delete(global.get_current_time()))")
+try:
+    app.wait(timeout=8)
+    exited = True
+except subprocess.TimeoutExpired:
+    exited = False
+    app.kill()
+check(exited, "with background running off, closing the window quits the application")
+check(all(row[6] == 0 for row in sessions()), "quitting that way still closes every session")
+
 calculator.terminate()
 editor.terminate()
 print("\nGNOME Wayland tracking checks passed")

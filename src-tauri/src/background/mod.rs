@@ -37,6 +37,15 @@ pub fn show_window(app: &AppHandle) {
     }
 }
 
+/// Defaults to staying alive if settings cannot be read, so that a database
+/// problem never silently stops tracking.
+pub fn runs_in_background(app: &AppHandle) -> bool {
+    app.state::<AppState>()
+        .database
+        .read(settings::load)
+        .map_or(true, |stored| stored.run_in_background)
+}
+
 pub fn quit(app: &AppHandle) {
     app.state::<AppState>().shutdown_tracker();
     app.exit(0);

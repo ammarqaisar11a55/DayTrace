@@ -40,7 +40,7 @@ fn start(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     background::start_update_checks(handle.clone());
 
     let launched_in_background = std::env::args().any(|argument| argument == BACKGROUND_FLAG);
-    if !(launched_in_background && stored.start_hidden) {
+    if !(launched_in_background && stored.start_hidden && stored.run_in_background) {
         background::show_window(&handle);
     }
     Ok(())
@@ -113,9 +113,13 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("failed to start DayTrace")
         .run(|app, event| match event {
-            // Closing the last window keeps tracking. Only an explicit quit,
-            // which passes an exit code, ends the process.
-            RunEvent::ExitRequested { api, code: None, .. } => api.prevent_exit(),
+            // Closing the last window keeps tracking unless the user turned that
+            // off. An explicit quit passes an exit code and always ends the process.
+            RunEvent::ExitRequested { api, code: None, .. } => {
+                if background::runs_in_background(app) {
+                    api.prevent_exit();
+                }
+            }
             RunEvent::Exit => {
                 if let Some(state) = app.try_state::<AppState>() {
                     state.shutdown_tracker();

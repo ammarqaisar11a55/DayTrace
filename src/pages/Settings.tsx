@@ -13,11 +13,13 @@ function Toggle({
   label,
   hint,
   checked,
+  disabled,
   onChange,
 }: {
   label: string;
   hint?: string;
   checked: boolean;
+  disabled?: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
@@ -26,7 +28,7 @@ function Toggle({
         <div className="text-[13px]">{label}</div>
         {hint && <div className="max-w-prose text-xs text-ink-3">{hint}</div>}
       </div>
-      <Switch checked={checked} onChange={onChange} label={label} />
+      <Switch checked={checked} onChange={onChange} label={label} disabled={disabled} />
     </div>
   );
 }
@@ -123,12 +125,6 @@ function PrivacySettings() {
         hint="Titles can contain document names, email subjects and other private details. They are stored only on this computer."
         checked={settings.collectWindowTitles}
         onChange={(collectWindowTitles) => void saveSettings({ collectWindowTitles })}
-      />
-      <Toggle
-        label="Browser integration"
-        hint="Lets the optional DayTrace browser extension share the active site's domain, never full addresses or history. See docs/BROWSER_INTEGRATION.md."
-        checked={settings.browserIntegration}
-        onChange={(browserIntegration) => void saveSettings({ browserIntegration })}
       />
       <div className="py-2">
         <Field label="Keep history for" hint="Older sessions are deleted automatically.">
@@ -316,15 +312,39 @@ function GeneralSettings() {
           </Select>
         </Field>
       </div>
+    </Section>
+  );
+}
+
+function StartupSettings() {
+  const { settings, saveSettings } = useApp();
+  return (
+    <Section title="Startup and background">
       <Toggle
-        label="Start when you log in"
+        label="Start automatically when you turn on your computer"
+        hint="DayTrace opens each time you sign in to this computer."
         checked={settings.startOnLogin}
         onChange={(startOnLogin) => void saveSettings({ startOnLogin })}
       />
       <Toggle
-        label="Start in the background"
-        hint="Open without showing a window. DayTrace keeps tracking when its window is closed."
+        label="Run in the background"
+        hint={
+          settings.runInBackground
+            ? "Closing the window keeps DayTrace running, so tracking continues."
+            : "Closing the window quits DayTrace, and tracking stops until you open it again."
+        }
+        checked={settings.runInBackground}
+        onChange={(runInBackground) => void saveSettings({ runInBackground })}
+      />
+      <Toggle
+        label="Start without opening a window"
+        hint={
+          settings.startOnLogin && settings.runInBackground
+            ? "At startup, DayTrace begins tracking without showing its window."
+            : "Needs both options above to be on."
+        }
         checked={settings.startHidden}
+        disabled={!settings.startOnLogin || !settings.runInBackground}
         onChange={(startHidden) => void saveSettings({ startHidden })}
       />
       <div className="py-2">
@@ -539,6 +559,7 @@ export function SettingsPage() {
       )}
       {tab === "general" && (
         <Panel>
+          <StartupSettings />
           <GeneralSettings />
         </Panel>
       )}

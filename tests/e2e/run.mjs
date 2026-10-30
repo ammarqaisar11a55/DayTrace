@@ -1,7 +1,7 @@
 // Drives the real application binary. See run.sh for how it is launched.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readdir, readFile } from "node:fs/promises";
 import { Driver } from "./webdriver.mjs";
 
 const application = process.env.DAYTRACE_BINARY;
@@ -106,6 +106,27 @@ await check("a manual timer starts and stops", async () => {
   await new Promise((resolve) => setTimeout(resolve, 1200));
   await driver.clickText("Stop timer");
   await driver.seesText("Tracking is off");
+});
+
+await check("starting with the computer writes a real autostart entry", async () => {
+  await driver.visit("settings");
+  await driver.clickText("General");
+  await driver.click('//button[@role="switch"][@aria-label="Start automatically when you turn on your computer"]');
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  const directory = `${process.env.HOME}/.config/autostart`;
+  const entries = await readdir(directory);
+  assert.equal(entries.length, 1, "one autostart entry");
+  const entry = await readFile(`${directory}/${entries[0]}`, "utf8");
+  assert.match(entry, /Exec=.*daytrace.*--background/);
+  await driver.click('//button[@role="switch"][@aria-label="Start automatically when you turn on your computer"]');
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  assert.deepEqual(await readdir(directory), [], "turning it off removes the entry");
+});
+
+await check("starting hidden depends on both startup options", async () => {
+  const hidden = '//button[@role="switch"][@aria-label="Start without opening a window"]';
+  assert.equal(await driver.command("GET", `/element/${await driver.find(hidden)}/enabled`), false);
+  await driver.screenshot(`${shots}/settings-startup.png`);
 });
 
 await check("theme setting applies immediately", async () => {
