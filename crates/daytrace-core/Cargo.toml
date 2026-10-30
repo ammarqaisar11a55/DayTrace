@@ -1,0 +1,45 @@
+[package]
+name = "daytrace-core"
+description = "Tracking engine, persistence and analytics for DayTrace"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+base64 = "0.22"
+log = "0.4"
+rusqlite = { version = "0.41", features = ["bundled", "backup"] }
+semver = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+wayland-client = "0.31"
+wayland-protocols = { version = "0.32", features = ["client", "staging"] }
+wayland-protocols-wlr = { version = "0.3", features = ["client"] }
+x11rb = { version = "0.14", features = ["screensaver"] }
+zbus = { version = "5", default-features = false, features = ["blocking-api", "async-io"] }
+
+[target.'cfg(windows)'.dependencies]
+png = "0.18"
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Storage_FileSystem",
+    "Win32_System_LibraryLoader",
+    "Win32_System_RemoteDesktop",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_UI_Accessibility",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+chrono-tz = "0.10"
+tempfile = "3"
