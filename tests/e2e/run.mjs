@@ -1,0 +1,179 @@
+// Drives the real application binary. See run.sh for how it is launched.
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdir } from "node:fs/promises";
+import { Driver } from "./webdriver.mjs";
+
+const application = process.env.DAYTRACE_BINARY;
+const database = process.env.DAYTRACE_DATABASE;
+const shots = process.env.DAYTRACE_SHOTS;
+await mkdir(shots, { recursive: true });
+
+const driver = new Driver();
+const heading = (title) => `//h1[normalize-space()="${title}"]`;
+let passed = 0;
+
+async function check(name, action) {
+  await action();
+  passed += 1;
+  console.log(`ok - ${name}`);
+}
+
+await driver.start(application);
+
+await check("first launch shows onboarding, not tracking", async () => {
+  await driver.seesText("DayTrace records how you use your computer");
+  await driver.screenshot(`${shots}/onboarding-1.png`);
+});
+
+await check("onboarding explains what is and is not collected", async () => {
+  await driver.clickText("Continue");
+  await driver.clickText("Continue");
+  await driver.seesText("The name and program path of the focused application");
+  await driver.clickText("Continue");
+  await driver.seesText("Keystrokes, passwords or clipboard contents");
+  await driver.clickText("Continue");
+  await driver.seesText("no telemetry");
+  await driver.clickText("Continue");
+  await driver.seesText("What works on this computer");
+  await driver.seesText("Idle detection");
+  await driver.screenshot(`${shots}/onboarding-capabilities.png`);
+});
+
+await check("declining consent leaves tracking off", async () => {
+  await driver.clickText("Not now");
+  await driver.find(heading("Dashboard"));
+  await driver.seesText("Automatic tracking is off");
+  await driver.seesText("Tracking is off");
+});
+
+for (const [page, title] of [
+  ["timeline", "Timeline"],
+  ["applications", "Applications"],
+  ["projects", "Projects"],
+  ["categories", "Categories"],
+  ["analytics", "Analytics"],
+  ["settings", "Settings"],
+  ["dashboard", "Dashboard"],
+]) {
+  await check(`${title} page opens`, async () => {
+    await driver.visit(page);
+    await driver.find(heading(title));
+  });
+}
+
+await check("the nine default categories are present", async () => {
+  await driver.visit("categories");
+  await driver.seesText("Administration");
+  await driver.seesText("Entertainment");
+});
+
+await check("a project can be created", async () => {
+  await driver.visit("projects");
+  await driver.clickText("New project");
+  await driver.type('//dialog[@open]//label[contains(., "Name")]//input', "Thesis");
+  await driver.clickText("Create project");
+  await driver.find('//*[normalize-space()="Thesis"]');
+});
+
+await check("a past entry can be added to the timeline", async () => {
+  await driver.visit("timeline");
+  await driver.clickText("Add entry");
+  await driver.type('//dialog[@open]//label[contains(., "Label")]//input', "Library reading");
+  await driver.click('//dialog[@open]//button[normalize-space()="Add entry"]');
+  await driver.find('//li//*[normalize-space()="Library reading"]');
+});
+
+await check("overlapping entries are refused with a clear message", async () => {
+  await driver.clickText("Add entry");
+  await driver.click('//dialog[@open]//button[normalize-space()="Add entry"]');
+  await driver.seesText("overlaps an existing session");
+  await driver.click('//dialog[@open]//button[normalize-space()="Cancel"]');
+});
+
+await check("a session can be corrected", async () => {
+  await driver.click('//li//button[contains(., "Library reading")]');
+  await driver.type('//dialog[@open]//label[contains(., "Label")]//input', "Reading room");
+  await driver.clickText("Save changes");
+  await driver.find('//li//*[normalize-space()="Reading room"]');
+});
+
+await check("a manual timer starts and stops", async () => {
+  await driver.click('//aside//button[normalize-space()="Timer"]');
+  await driver.type('//dialog[@open]//input', "Notes");
+  await driver.clickText("Start timer");
+  await driver.seesText("Timer running");
+  await new Promise((resolve) => setTimeout(resolve, 1200));
+  await driver.clickText("Stop timer");
+  await driver.seesText("Tracking is off");
+});
+
+await check("theme setting applies immediately", async () => {
+  await driver.visit("settings");
+  await driver.clickText("General");
+  await driver.find('//label[contains(., "Theme")]//select');
+  await driver.script(`
+    const select = [...document.querySelectorAll("select")].find((item) => item.value === "system");
+    const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set;
+    set.call(select, "dark");
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  `);
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  assert.equal(await driver.script('return document.documentElement.dataset.theme ?? ""'), "dark");
+  await driver.script(`
+    const select = [...document.querySelectorAll("select")].find((item) => item.value === "dark");
+    const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set;
+    set.call(select, "system");
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  `);
+});
+
+await driver.stop();
+await new Promise((resolve) => setTimeout(resolve, 800));
+
+const seeded = spawnSync("python3", ["-I", new URL("./seed.py", import.meta.url).pathname, database], { encoding: "utf8" });
+assert.equal(seeded.status, 0, seeded.stderr);
+
+await driver.start(application);
+
+await check("settings and history survive a restart", async () => {
+  await driver.find(heading("Dashboard"));
+  await driver.seesText("Computer use");
+});
+
+const capture = async (page, name, prepare) => {
+  await driver.visit(page);
+  await new Promise((resolve) => setTimeout(resolve, 700));
+  if (prepare) await prepare();
+  await new Promise((resolve) => setTimeout(resolve, 900));
+  await driver.screenshot(`${shots}/${name}.png`);
+};
+
+await check("populated pages render from stored data", async () => {
+  await capture("dashboard", "dashboard-today");
+  await capture("dashboard", "dashboard-week", () => driver.clickText("Last 7 days"));
+  await capture("dashboard", "dashboard-month", () => driver.clickText("Last 30 days"));
+  await capture("timeline", "timeline");
+  await capture("applications", "applications");
+  await capture("projects", "projects");
+  await capture("categories", "categories");
+  await capture("analytics", "analytics");
+  await capture("settings", "settings-tracking");
+});
+
+await check("rule preview reports changes without applying them", async () => {
+  await driver.visit("projects");
+  await driver.clickText("Preview last 30 days");
+  await driver.seesText("sessions would change");
+  await driver.screenshot(`${shots}/rule-preview.png`);
+  await driver.click('//dialog[@open]//button[normalize-space()="Cancel"]');
+});
+
+await check("dark theme renders", async () => {
+  await driver.script('document.documentElement.dataset.theme = "dark"');
+  await capture("dashboard", "dashboard-dark");
+  await capture("analytics", "analytics-dark");
+});
+
+await driver.stop();
+console.log(`\n${passed} end-to-end checks passed`);
