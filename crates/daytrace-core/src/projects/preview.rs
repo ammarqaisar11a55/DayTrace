@@ -96,7 +96,13 @@ fn classify_all(
             window_title: candidate.window_title.as_deref(),
             domain: None,
         };
-        let result = classifier.classify(Some(application.id), &subject);
+        // Rules add or change an assignment. When nothing applies to a session
+        // it keeps what it has, so one new rule cannot erase earlier work.
+        let classified = classifier.classify(Some(application.id), &subject);
+        let result = Classification {
+            project_id: classified.project_id.or(candidate.project_id),
+            category_id: classified.category_id.or(candidate.category_id),
+        };
         if (result.project_id, result.category_id) == (candidate.project_id, candidate.category_id) {
             continue;
         }
@@ -227,6 +233,33 @@ mod tests {
         let result = db.write(|c| apply(c, 0, 10_000)).unwrap();
         assert_eq!(result.changed, 0);
         assert_eq!(result.skipped_manual, 1);
+    }
+
+    #[test]
+    fn sessions_no_rule_matches_keep_their_assignment() {
+        let (_dir, db, _, _, _) = setup();
+        let other = db.write(|c| applications::upsert(c, "slack", "Slack", None, None)).unwrap();
+        let session = db
+            .write(|c| {
+                insert_tracked(
+                    c,
+                    &TrackedSession {
+                        application_id: Some(other),
+                        project_id: None,
+                        category_id: Some(1),
+                        start_time: 3_000,
+                        end_time: 4_000,
+                        session_type: SessionType::Active,
+                        window_title: None,
+                        label: None,
+                        manual_override: false,
+                        is_open: false,
+                    },
+                )
+            })
+            .unwrap();
+        db.write(|c| apply(c, 0, 10_000)).unwrap();
+        assert_eq!(db.read(|c| sessions::get(c, session)).unwrap().category_id, Some(1));
     }
 
     #[test]
