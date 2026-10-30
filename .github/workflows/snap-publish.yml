@@ -1,0 +1,40 @@
+name: Publish snap
+
+# Publishes the snap already attached to a release, without rebuilding it. It
+# needs the SNAPCRAFT_STORE_CREDENTIALS secret. See DEVELOPMENT.md.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release whose snap to publish
+        required: true
+        default: v0.1.0
+      channel:
+        description: Snap Store channel
+        required: true
+        default: edge
+        type: choice
+        options: [edge, beta, candidate, stable]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+    steps:
+      - name: Check for store credentials
+        run: |
+          test -n "$SNAPCRAFT_STORE_CREDENTIALS" || {
+            echo "::error::The SNAPCRAFT_STORE_CREDENTIALS secret is not set"
+            exit 1
+          }
+      - name: Fetch the snap from the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release download "${{ inputs.tag }}" --repo "$GITHUB_REPOSITORY" --pattern '*.snap'
+      - run: sudo snap install snapcraft --classic
+      - name: Upload and release
+        run: snapcraft upload --release="${{ inputs.channel }}" ./*.snap

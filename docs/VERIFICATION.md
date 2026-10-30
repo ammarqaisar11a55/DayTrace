@@ -1,7 +1,7 @@
 # Verification status
 
 This records what has actually been run. A platform is not called supported because its code
-compiles. Last updated 2026-10-30.
+compiles. Last updated 2026-10-31.
 
 ## Verified by running it
 
@@ -23,12 +23,14 @@ compiles. Last updated 2026-10-30.
 | `.deb`, `.rpm` | Built and signed. `.deb` contents inspected. Neither has been installed |
 | Windows core logic | 110 tests pass on `windows-latest` in CI, including live Win32 calls for process inspection and idle time |
 | CI on Ubuntu 24.04 | Clippy, the X11 test and all 23 end-to-end checks pass on GitHub Actions |
+| Release workflow | v0.1.0 built and published every package. Both update manifests are served with all six platform entries, and the published `.deb` and Windows installer verify against the shipped key |
+| Snap build | Builds on GitHub Actions. Its metadata, launcher and binary were inspected. It has not been installed |
 
 ## Compiled only, not run
 
 | Area | Status |
 | --- | --- |
-| Windows focus detection and application | The application type-checks for Windows but has never been launched. CI has no interactive desktop, so foreground detection, the event hooks and the installer are untested |
+| Windows focus detection and application | The application and installer build for Windows but have never been launched. CI has no interactive desktop, so foreground detection and the event hooks are untested |
 | KDE Plasma backend | Compiles. Written from KWin's scripting documentation and never run against KWin |
 | GNOME extension on Shell 42 to 44 | The legacy variant has never been loaded. Shell 45 to 49 use the modern variant, tested only on 50 |
 
@@ -38,10 +40,9 @@ compiles. Last updated 2026-10-30.
 | --- | --- |
 | Windows installation, foreground tracking, updates, lock, suspend, startup | Needs a real Windows 10 and 11 desktop |
 | Installing `.deb` and `.rpm`, tray behaviour | Needs root, and a real desktop session for the tray |
-| Snap build and install | Needs LXD or Multipass. `snapcraft.yaml` has never been built |
-| Applying an update end to end | Needs a published release. Only signature checks and version rules are tested |
+| Snap install and behaviour | Needs root to install. Whether it launches under strict confinement has not been seen |
+| Applying an update end to end | Needs a second published release to update to. Only signature checks and version rules are tested |
 | Real suspend, resume and screen lock | Handled by tests in simulated time only; real `logind` signals were not triggered |
-| Release workflow | The CI workflow runs on every push. The release workflow has not run, because no version has been tagged |
 | Fedora, Debian, Linux Mint | Not tested. Only Ubuntu 26.04 was available |
 
 ## Running the suites

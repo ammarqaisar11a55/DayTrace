@@ -84,10 +84,12 @@ The workflow needs these repository secrets:
 | --- | --- |
 | `TAURI_SIGNING_PRIVATE_KEY` | Signs update artifacts |
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Its password, which may be empty |
-| `SNAPCRAFT_STORE_CREDENTIALS` | Optional. Publishes to the Snap Store |
+| `SNAPCRAFT_STORE_CREDENTIALS` | Optional. Publishes to the Snap Store. Once set, tagged releases publish to the stable channel, or beta for prereleases |
 
 To release:
 
 1. Update the version in `package.json`, `src-tauri/tauri.conf.json` and the root `Cargo.toml`.
 2. Update `CHANGELOG.md`.
 3. Push a tag such as `v1.2.0`, or `v1.2.0-beta.1` for the beta channel.
+
+To put an existing release's snap on a Snap Store channel, run the **Publish snap** workflow.
