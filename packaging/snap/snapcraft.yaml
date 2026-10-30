@@ -1,0 +1,46 @@
+name: daytrace
+base: core24
+adopt-info: daytrace
+summary: Privacy-first desktop activity tracking
+description: |
+  DayTrace records which applications you use and how your time is spent,
+  without timers. All data stays on your computer.
+
+  Strict confinement limits what a tracker can see. Settings shows exactly what
+  works in this package. For full tracking, including program paths and the
+  GNOME Wayland integration, use the .deb, .rpm or AppImage packages.
+grade: stable
+confinement: strict
+license: MIT
+
+platforms:
+  amd64:
+
+apps:
+  daytrace:
+    command: usr/bin/daytrace
+    desktop: usr/share/applications/DayTrace.desktop
+    autostart: DayTrace.desktop
+    extensions: [gnome]
+    plugs:
+      - network
+      - x11
+      - wayland
+      - desktop
+      - desktop-legacy
+      - login-session-observe
+
+parts:
+  daytrace:
+    plugin: dump
+    # The release workflow places the Debian package built by Tauri here.
+    source: input/
+    source-type: local
+    override-build: |
+      for package in "$CRAFT_PART_SRC"/*.deb; do
+        dpkg-deb -x "$package" "$CRAFT_PART_INSTALL"
+      done
+      version=$(ls "$CRAFT_PART_SRC"/*.deb | sed -E 's/.*_([0-9][^_]*)_amd64\.deb/\1/')
+      craftctl set version="$version"
+      sed -i 's|^Icon=.*|Icon=/usr/share/icons/hicolor/128x128/apps/daytrace.png|' \
+        "$CRAFT_PART_INSTALL/usr/share/applications/DayTrace.desktop"

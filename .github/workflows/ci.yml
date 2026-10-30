@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npx vite build
+
+  # Runs the Windows backend's tests on real Windows, including the Win32 calls
+  # that cannot run on the development machine.
+  core:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test -p daytrace-core
+      - run: cargo clippy -p daytrace-core --all-targets -- -D warnings
+
+  linux-integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
+            libgtk-3-dev patchelf xvfb webkit2gtk-driver dbus-x11
+      - run: npm ci
+      - run: npx vite build
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: X11 backend against a real X server
+        run: |
+          Xvfb :94 -screen 0 800x600x24 -nolisten tcp &
+          sleep 1
+          DAYTRACE_TEST_X11=1 DISPLAY=:94 XDG_SESSION_TYPE=x11 cargo test -p daytrace-core --test x11_tracker
+      - name: End-to-end tests against the built application
+        run: |
+          cargo install tauri-driver --locked
+          cargo build -p daytrace -F tauri/custom-protocol
+          DAYTRACE_BINARY=$PWD/target/debug/daytrace tests/e2e/run.sh
