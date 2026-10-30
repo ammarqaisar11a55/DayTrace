@@ -2,6 +2,11 @@ name: daytrace
 title: DayTrace
 license: MIT
 base: core24
+icon: src-tauri/icons/128x128@2x.png
+website: https://github.com/ammarqaisar11a55/DayTrace
+source-code: https://github.com/ammarqaisar11a55/DayTrace
+issues: https://github.com/ammarqaisar11a55/DayTrace/issues
+contact: https://github.com/ammarqaisar11a55/DayTrace/issues
 # The version is taken from package.json by the build below.
 adopt-info: daytrace
 summary: Privacy-first desktop activity tracking
