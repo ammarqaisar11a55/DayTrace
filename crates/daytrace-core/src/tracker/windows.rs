@@ -12,7 +12,8 @@ use log::debug;
 use windows::core::{w, BOOL, PCWSTR, PWSTR};
 use windows::Win32::Foundation::{CloseHandle, HMODULE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Graphics::Gdi::{
-    CreateCompatibleDC, DeleteDC, DeleteObject, GetDIBits, BITMAPINFO, BITMAPINFOHEADER, BI_RGB, DIB_RGB_COLORS,
+    CreateCompatibleDC, DeleteDC, DeleteObject, GetDIBits, BITMAPINFO, BITMAPINFOHEADER, BI_RGB,
+    DIB_RGB_COLORS,
 };
 use windows::Win32::Storage::FileSystem::{GetFileVersionInfoSizeW, GetFileVersionInfoW, VerQueryValueW};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
@@ -27,11 +28,9 @@ use windows::Win32::UI::Shell::{SHGetFileInfoW, SHFILEINFOW, SHGFI_ICON, SHGFI_L
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DefWindowProcW, DestroyIcon, DispatchMessageW, EnumChildWindows, GetForegroundWindow,
     GetIconInfo, GetMessageW, GetWindowTextLengthW, GetWindowTextW, GetWindowThreadProcessId, RegisterClassW,
-    TranslateMessage,
-    CW_USEDEFAULT, EVENT_SYSTEM_FOREGROUND, ICONINFO, MSG, PBT_APMRESUMEAUTOMATIC, PBT_APMRESUMESUSPEND,
-    PBT_APMSUSPEND,
-    WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS, WM_ENDSESSION, WM_POWERBROADCAST, WM_QUERYENDSESSION,
-    WM_WTSSESSION_CHANGE, WNDCLASSW, WS_OVERLAPPED,
+    TranslateMessage, CW_USEDEFAULT, EVENT_SYSTEM_FOREGROUND, ICONINFO, MSG, PBT_APMRESUMEAUTOMATIC,
+    PBT_APMRESUMESUSPEND, PBT_APMSUSPEND, WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS, WM_ENDSESSION,
+    WM_POWERBROADCAST, WM_QUERYENDSESSION, WM_WTSSESSION_CHANGE, WNDCLASSW, WS_OVERLAPPED,
 };
 
 use super::{
@@ -157,12 +156,8 @@ fn executable_path(pid: u32) -> Option<String> {
         let process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
         let mut buffer = vec![0u16; 1024];
         let mut length = buffer.len() as u32;
-        let result = QueryFullProcessImageNameW(
-            process,
-            PROCESS_NAME_WIN32,
-            PWSTR(buffer.as_mut_ptr()),
-            &mut length,
-        );
+        let result =
+            QueryFullProcessImageNameW(process, PROCESS_NAME_WIN32, PWSTR(buffer.as_mut_ptr()), &mut length);
         let _ = CloseHandle(process);
         result.ok()?;
         Some(String::from_utf16_lossy(&buffer[..length as usize]))
@@ -184,7 +179,9 @@ fn file_description(path: &str) -> Option<String> {
         let mut translation = std::ptr::null_mut();
         let mut length = 0;
         let root: Vec<u16> = "\\VarFileInfo\\Translation".encode_utf16().chain(Some(0)).collect();
-        VerQueryValueW(data.as_ptr().cast(), PCWSTR(root.as_ptr()), &mut translation, &mut length).ok().ok()?;
+        VerQueryValueW(data.as_ptr().cast(), PCWSTR(root.as_ptr()), &mut translation, &mut length)
+            .ok()
+            .ok()?;
         if length < 4 {
             return None;
         }
@@ -314,9 +311,7 @@ fn resolve_hosted_process(window: HWND, pid: u32) -> u32 {
 }
 
 fn is_frame_host(path: &str) -> bool {
-    Path::new(path)
-        .file_name()
-        .is_some_and(|name| name.eq_ignore_ascii_case("ApplicationFrameHost.exe"))
+    Path::new(path).file_name().is_some_and(|name| name.eq_ignore_ascii_case("ApplicationFrameHost.exe"))
 }
 
 fn friendly_exe_name(path: &str) -> String {

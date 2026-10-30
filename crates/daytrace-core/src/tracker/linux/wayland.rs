@@ -18,8 +18,7 @@ use wayland_client::protocol::{wl_registry, wl_seat};
 use wayland_client::{event_created_child, Connection, Dispatch, Proxy, QueueHandle};
 use wayland_protocols::ext::idle_notify::v1::client::{ext_idle_notification_v1, ext_idle_notifier_v1};
 use wayland_protocols_wlr::foreign_toplevel::v1::client::{
-    zwlr_foreign_toplevel_handle_v1 as toplevel_handle,
-    zwlr_foreign_toplevel_manager_v1 as toplevel_manager,
+    zwlr_foreign_toplevel_handle_v1 as toplevel_handle, zwlr_foreign_toplevel_manager_v1 as toplevel_manager,
 };
 
 use super::desktop_entries::friendly_name;
@@ -74,7 +73,15 @@ impl Dispatch<wl_registry::WlRegistry, GlobalListContents> for State {
 }
 
 impl Dispatch<wl_seat::WlSeat, ()> for State {
-    fn event(_: &mut Self, _: &wl_seat::WlSeat, _: wl_seat::Event, _: &(), _: &Connection, _: &QueueHandle<Self>) {}
+    fn event(
+        _: &mut Self,
+        _: &wl_seat::WlSeat,
+        _: wl_seat::Event,
+        _: &(),
+        _: &Connection,
+        _: &QueueHandle<Self>,
+    ) {
+    }
 }
 
 impl Dispatch<ext_idle_notifier_v1::ExtIdleNotifierV1, ()> for State {
@@ -199,8 +206,7 @@ impl WaylandClient {
 
         let thread_shared = shared.clone();
         let spawned = thread::Builder::new().name("daytrace-wayland".into()).spawn(move || {
-            let mut state =
-                State { shared: thread_shared.clone(), sink, toplevels: HashMap::new() };
+            let mut state = State { shared: thread_shared.clone(), sink, toplevels: HashMap::new() };
             // These objects must stay alive for their events to arrive.
             let _bound = (manager, seat, notifier, notification);
             while thread_shared.running.load(Ordering::SeqCst) {

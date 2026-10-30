@@ -13,8 +13,8 @@ use super::desktop_entries::{friendly_name, DesktopEntries};
 use super::procinfo;
 use super::session::SessionMonitor;
 use crate::tracker::{
-    ActivityTracker, Capabilities, Capability, EventSink, Foreground, ForegroundApp, Sample,
-    SampleOptions, SystemEvent,
+    ActivityTracker, Capabilities, Capability, EventSink, Foreground, ForegroundApp, Sample, SampleOptions,
+    SystemEvent,
 };
 
 struct Atoms {
@@ -112,7 +112,9 @@ impl LinuxX11Tracker {
             .ok()
             .and_then(|cookie| cookie.reply().ok());
         reply
-            .and_then(|reply| reply.value32().map(|mut atoms| atoms.any(|atom| atom == self.atoms.active_window)))
+            .and_then(|reply| {
+                reply.value32().map(|mut atoms| atoms.any(|atom| atom == self.atoms.active_window))
+            })
             .unwrap_or(false)
     }
 
@@ -173,10 +175,8 @@ impl LinuxX11Tracker {
 
         let pid = self.pid(window);
         let class = self.wm_class(window);
-        let identifier = class
-            .as_ref()
-            .map(|(_, class)| class.clone())
-            .or_else(|| pid.and_then(procinfo::process_name));
+        let identifier =
+            class.as_ref().map(|(_, class)| class.clone()).or_else(|| pid.and_then(procinfo::process_name));
         let Some(identifier) = identifier else { return Foreground::Unknown };
 
         let app = ForegroundApp {
@@ -193,7 +193,8 @@ impl LinuxX11Tracker {
 fn parse_wm_class(value: &[u8]) -> Option<(String, String)> {
     let mut parts = value.split(|byte| *byte == 0).filter(|part| !part.is_empty());
     let instance = String::from_utf8_lossy(parts.next()?).to_string();
-    let class = parts.next().map_or_else(|| instance.clone(), |part| String::from_utf8_lossy(part).to_string());
+    let class =
+        parts.next().map_or_else(|| instance.clone(), |part| String::from_utf8_lossy(part).to_string());
     Some((instance, class))
 }
 
@@ -242,10 +243,7 @@ mod tests {
 
     #[test]
     fn wm_class_has_instance_and_class() {
-        assert_eq!(
-            parse_wm_class(b"code\0Code\0"),
-            Some(("code".to_string(), "Code".to_string()))
-        );
+        assert_eq!(parse_wm_class(b"code\0Code\0"), Some(("code".to_string(), "Code".to_string())));
     }
 
     #[test]

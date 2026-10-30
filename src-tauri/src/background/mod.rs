@@ -40,10 +40,7 @@ pub fn show_window(app: &AppHandle) {
 /// Defaults to staying alive if settings cannot be read, so that a database
 /// problem never silently stops tracking.
 pub fn runs_in_background(app: &AppHandle) -> bool {
-    app.state::<AppState>()
-        .database
-        .read(settings::load)
-        .map_or(true, |stored| stored.run_in_background)
+    app.state::<AppState>().database.read(settings::load).map_or(true, |stored| stored.run_in_background)
 }
 
 pub fn quit(app: &AppHandle) {
@@ -87,11 +84,8 @@ fn update_check_due(app: &AppHandle, at_startup: bool) -> bool {
     if !stored.update_check_on_startup {
         return false;
     }
-    let spacing = if at_startup {
-        MIN_CHECK_SPACING_MS
-    } else {
-        stored.update_check_interval_hours as i64 * HOUR_MS
-    };
+    let spacing =
+        if at_startup { MIN_CHECK_SPACING_MS } else { stored.update_check_interval_hours as i64 * HOUR_MS };
     stored.last_update_check.is_none_or(|last| now_ms() - last >= spacing)
 }
 

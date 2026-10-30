@@ -62,9 +62,8 @@ pub fn write_csv(connection: &Connection, output: &mut impl Write) -> Result<()>
         "id,type,application,project,category,label,window_title,start_utc,end_utc,duration_seconds"
     )?;
     for session in all_sessions(connection)? {
-        let timestamp = |ms: i64| {
-            chrono::DateTime::from_timestamp_millis(ms).map(|t| t.to_rfc3339()).unwrap_or_default()
-        };
+        let timestamp =
+            |ms: i64| chrono::DateTime::from_timestamp_millis(ms).map(|t| t.to_rfc3339()).unwrap_or_default();
         let optional = |value: &Option<String>| csv_field(value.as_deref().unwrap_or(""));
         writeln!(
             output,

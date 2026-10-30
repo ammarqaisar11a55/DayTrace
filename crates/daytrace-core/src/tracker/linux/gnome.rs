@@ -33,9 +33,9 @@ const EXTENSION_LEGACY: &str = include_str!("../../../../../extensions/gnome-she
 type FocusReply = (bool, String, String, String, u32, String);
 
 fn extension_directory() -> Option<PathBuf> {
-    let base = std::env::var_os("XDG_DATA_HOME").map(PathBuf::from).or_else(|| {
-        std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/share"))
-    })?;
+    let base = std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/share")))?;
     Some(base.join("gnome-shell/extensions").join(EXTENSION_UUID))
 }
 
@@ -61,11 +61,10 @@ fn set_enabled(enabled: bool) -> Result<()> {
     if enabled {
         extensions.push(EXTENSION_UUID.to_string());
     }
-    let value = format!(
-        "[{}]",
-        extensions.iter().map(|item| format!("'{item}'")).collect::<Vec<_>>().join(", ")
-    );
-    let write = Command::new("gsettings").args(["set", "org.gnome.shell", "enabled-extensions", &value]).status()?;
+    let value =
+        format!("[{}]", extensions.iter().map(|item| format!("'{item}'")).collect::<Vec<_>>().join(", "));
+    let write =
+        Command::new("gsettings").args(["set", "org.gnome.shell", "enabled-extensions", &value]).status()?;
     if !write.success() {
         return invalid("Could not update the list of enabled GNOME extensions");
     }
@@ -205,7 +204,8 @@ impl FocusSource for GnomeFocus {
         if self.is_active() {
             return Some(IntegrationState::Active);
         }
-        let installed = extension_directory().is_some_and(|directory| directory.join("metadata.json").exists());
+        let installed =
+            extension_directory().is_some_and(|directory| directory.join("metadata.json").exists());
         Some(if installed { IntegrationState::PendingRestart } else { IntegrationState::NotInstalled })
     }
 

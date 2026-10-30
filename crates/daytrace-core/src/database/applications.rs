@@ -68,11 +68,8 @@ pub fn list(connection: &Connection) -> Result<Vec<Application>> {
 
 /// Applications with their use inside the half-open range, clipped to it.
 pub fn list_usage(connection: &Connection, from: i64, to: i64) -> Result<Vec<ApplicationUsage>> {
-    let columns = COLUMNS
-        .split(',')
-        .map(|column| format!("a.{}", column.trim()))
-        .collect::<Vec<_>>()
-        .join(", ");
+    let columns =
+        COLUMNS.split(',').map(|column| format!("a.{}", column.trim())).collect::<Vec<_>>().join(", ");
     let mut statement = connection.prepare(&format!(
         "SELECT {columns},
             COALESCE(SUM(MIN(s.end_time, ?2) - MAX(s.start_time, ?1)), 0),

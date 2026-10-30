@@ -29,7 +29,11 @@ fn main() {
     let database = Database::open(directory.join("bench.db")).expect("open database");
 
     let apps: Vec<i64> = database
-        .write(|c| (0..40).map(|i| applications::upsert(c, &format!("app{i}"), &format!("App {i}"), None, None)).collect())
+        .write(|c| {
+            (0..40)
+                .map(|i| applications::upsert(c, &format!("app{i}"), &format!("App {i}"), None, None))
+                .collect()
+        })
         .expect("insert applications");
 
     let started = Instant::now();
@@ -50,7 +54,11 @@ fn main() {
                             category_id: Some(index % 9 + 1),
                             start_time,
                             end_time: start_time + step,
-                            session_type: if index % 11 == 0 { SessionType::Idle } else { SessionType::Active },
+                            session_type: if index % 11 == 0 {
+                                SessionType::Idle
+                            } else {
+                                SessionType::Active
+                            },
                             window_title: None,
                             label: None,
                             manual_override: false,
@@ -70,9 +78,7 @@ fn main() {
     let today = Local::now().date_naive();
     let report = |days: u64| {
         let from = today - Days::new(days - 1);
-        database
-            .read(|c| analytics::report(c, &Local, from, today, now_ms(), None))
-            .expect("report")
+        database.read(|c| analytics::report(c, &Local, from, today, now_ms(), None)).expect("report")
     };
     measure("report, today", 20, || report(1));
     measure("report, last 7 days", 20, || report(7));

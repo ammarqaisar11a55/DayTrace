@@ -32,11 +32,7 @@ pub fn list_exclusions(state: State<'_, AppState>) -> CommandResult<Vec<Exclusio
 }
 
 #[tauri::command(async)]
-pub fn add_exclusion(
-    state: State<'_, AppState>,
-    kind: ExclusionKind,
-    value: String,
-) -> CommandResult<()> {
+pub fn add_exclusion(state: State<'_, AppState>, kind: ExclusionKind, value: String) -> CommandResult<()> {
     state.database.write(|connection| exclusions::add(connection, kind, &value)).map_err(to_message)?;
     state.send(Message::RulesChanged);
     Ok(())

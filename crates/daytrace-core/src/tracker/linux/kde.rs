@@ -124,11 +124,8 @@ impl FocusSource for KdeFocus {
         }
         let Some(focused) = focused else { return Foreground::NoFocus };
 
-        let raw_identifier = if focused.desktop_file.is_empty() {
-            &focused.resource_class
-        } else {
-            &focused.desktop_file
-        };
+        let raw_identifier =
+            if focused.desktop_file.is_empty() { &focused.resource_class } else { &focused.desktop_file };
         if raw_identifier.is_empty() {
             return Foreground::Unknown;
         }

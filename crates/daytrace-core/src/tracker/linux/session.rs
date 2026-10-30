@@ -13,8 +13,8 @@ use zbus::blocking::{Connection, MessageIterator, Proxy};
 use zbus::zvariant::{OwnedObjectPath, OwnedValue};
 use zbus::MatchRule;
 
-use crate::tracker::{Capability, EventSink, SystemEvent};
 use crate::time::now_ms;
+use crate::tracker::{Capability, EventSink, SystemEvent};
 
 const LOGIND: &str = "org.freedesktop.login1";
 const MANAGER_PATH: &str = "/org/freedesktop/login1";
@@ -99,10 +99,7 @@ fn watch_locked_hint(
 
 fn watch_screen_saver(locked: Arc<AtomicBool>, sink: EventSink) -> zbus::Result<()> {
     let connection = Connection::session()?;
-    let rule = MatchRule::builder()
-        .msg_type(zbus::message::Type::Signal)
-        .member("ActiveChanged")?
-        .build();
+    let rule = MatchRule::builder().msg_type(zbus::message::Type::Signal).member("ActiveChanged")?.build();
     for message in MessageIterator::for_match_rule(rule, &connection, None)? {
         let message = message?;
         let Ok(active) = message.body().deserialize::<bool>() else { continue };

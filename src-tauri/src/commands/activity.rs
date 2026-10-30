@@ -72,10 +72,8 @@ pub fn update_session(
     id: i64,
     patch: SessionPatch,
 ) -> CommandResult<Session> {
-    let session = state
-        .database
-        .write(|connection| sessions::update(connection, id, &patch))
-        .map_err(to_message)?;
+    let session =
+        state.database.write(|connection| sessions::update(connection, id, &patch)).map_err(to_message)?;
     notify_data_changed(&app);
     Ok(session)
 }
@@ -93,10 +91,8 @@ pub fn create_manual_session(
     state: State<'_, AppState>,
     input: ManualSessionInput,
 ) -> CommandResult<Session> {
-    let session = state
-        .database
-        .write(|connection| sessions::insert_manual(connection, &input))
-        .map_err(to_message)?;
+    let session =
+        state.database.write(|connection| sessions::insert_manual(connection, &input)).map_err(to_message)?;
     notify_data_changed(&app);
     Ok(session)
 }

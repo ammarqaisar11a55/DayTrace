@@ -15,8 +15,12 @@ use std::time::{Duration, Instant};
 use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 
-use super::engine::{Activity, AppActivity, Effect, Engine, EngineConfig, Focus, ManualActivity, Segment, Tick};
-use super::{ActivityTracker, Capabilities, EventSink, Foreground, ForegroundApp, Sample, SampleOptions, SystemEvent};
+use super::engine::{
+    Activity, AppActivity, Effect, Engine, EngineConfig, Focus, ManualActivity, Segment, Tick,
+};
+use super::{
+    ActivityTracker, Capabilities, EventSink, Foreground, ForegroundApp, Sample, SampleOptions, SystemEvent,
+};
 use crate::config::Settings;
 use crate::database::sessions::{self, TrackedSession};
 use crate::database::{applications, categories, exclusions, rules, settings, Database};
@@ -32,7 +36,9 @@ pub enum Message {
     System(SystemEvent),
     SettingsChanged,
     RulesChanged,
-    Pause { until: Option<i64> },
+    Pause {
+        until: Option<i64>,
+    },
     Resume,
     StartManual(ManualActivity),
     StopManual,
@@ -608,10 +614,7 @@ impl Runtime {
 }
 
 fn engine_config(settings: &Settings) -> EngineConfig {
-    EngineConfig::new(
-        settings.idle_threshold_secs as i64 * 1_000,
-        settings.poll_interval_secs as i64 * 1_000,
-    )
+    EngineConfig::new(settings.idle_threshold_secs as i64 * 1_000, settings.poll_interval_secs as i64 * 1_000)
 }
 
 fn tracked_session(segment: &Segment, open: bool) -> TrackedSession {
@@ -660,7 +663,11 @@ mod tests {
 
     impl Scripted {
         fn new() -> Self {
-            Self(Arc::new(Mutex::new(Sample { foreground: Foreground::NoFocus, idle_ms: Some(0), locked: false })))
+            Self(Arc::new(Mutex::new(Sample {
+                foreground: Foreground::NoFocus,
+                idle_ms: Some(0),
+                locked: false,
+            })))
         }
 
         fn focus(&self, name: &str) {

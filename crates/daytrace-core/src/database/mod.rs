@@ -204,9 +204,8 @@ mod tests {
         let path = directory.path().join("test.db");
         Database::open(&path).unwrap();
         let db = Database::open(&path).unwrap();
-        let categories: i64 = db
-            .read(|c| Ok(c.query_row("SELECT COUNT(*) FROM categories", [], |row| row.get(0))?))
-            .unwrap();
+        let categories: i64 =
+            db.read(|c| Ok(c.query_row("SELECT COUNT(*) FROM categories", [], |row| row.get(0))?)).unwrap();
         assert_eq!(categories, 9);
     }
 
@@ -218,9 +217,8 @@ mod tests {
             Err(CoreError::Invalid("stop".into()))
         });
         assert!(result.is_err());
-        let categories: i64 = db
-            .read(|c| Ok(c.query_row("SELECT COUNT(*) FROM categories", [], |row| row.get(0))?))
-            .unwrap();
+        let categories: i64 =
+            db.read(|c| Ok(c.query_row("SELECT COUNT(*) FROM categories", [], |row| row.get(0))?)).unwrap();
         assert_eq!(categories, 9);
     }
 

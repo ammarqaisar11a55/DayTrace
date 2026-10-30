@@ -110,12 +110,7 @@ fn load_names(connection: &Connection, sql: &str) -> Result<Names> {
     Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
 
-fn rank(
-    usage: HashMap<Option<i64>, i64>,
-    names: &Names,
-    unassigned: &str,
-    total: i64,
-) -> Vec<RankedItem> {
+fn rank(usage: HashMap<Option<i64>, i64>, names: &Names, unassigned: &str, total: i64) -> Vec<RankedItem> {
     let mut items: Vec<RankedItem> = usage
         .into_iter()
         .filter(|(_, ms)| *ms > 0)
@@ -253,10 +248,8 @@ pub fn report<Tz: TimeZone>(
     let elapsed = now.min(range_end) - range_start;
     totals.untracked_ms = (elapsed - totals.total_ms).max(0);
 
-    let application_names = load_names(
-        connection,
-        "SELECT id, COALESCE(display_name, name), NULL FROM applications",
-    )?;
+    let application_names =
+        load_names(connection, "SELECT id, COALESCE(display_name, name), NULL FROM applications")?;
     let project_names = load_names(connection, "SELECT id, name, color FROM projects")?;
     let category_names = load_names(connection, "SELECT id, name, color FROM categories")?;
 
@@ -270,10 +263,7 @@ pub fn report<Tz: TimeZone>(
         daily: daily.into_values().collect(),
         weekly: weekly.into_values().collect(),
         monthly: monthly.into_values().collect(),
-        heatmap: heatmap
-            .into_iter()
-            .map(|((weekday, hour), ms)| HourCell { weekday, hour, ms })
-            .collect(),
+        heatmap: heatmap.into_iter().map(|((weekday, hour), ms)| HourCell { weekday, hour, ms }).collect(),
         totals,
     })
 }
@@ -333,9 +323,10 @@ pub fn project_report(
 
 /// The UTC millisecond for a local wall-clock time, for tests and fixtures.
 pub fn local_ms<Tz: TimeZone>(tz: &Tz, date: NaiveDate, hour: u32, minute: u32) -> i64 {
-    tz.from_local_datetime(&date.and_hms_opt(hour, minute, 0).expect("valid time"))
-        .earliest()
-        .map_or_else(|| Utc.from_utc_datetime(&date.and_hms_opt(hour, minute, 0).unwrap()).timestamp_millis(), |t| t.timestamp_millis())
+    tz.from_local_datetime(&date.and_hms_opt(hour, minute, 0).expect("valid time")).earliest().map_or_else(
+        || Utc.from_utc_datetime(&date.and_hms_opt(hour, minute, 0).unwrap()).timestamp_millis(),
+        |t| t.timestamp_millis(),
+    )
 }
 
 #[cfg(test)]

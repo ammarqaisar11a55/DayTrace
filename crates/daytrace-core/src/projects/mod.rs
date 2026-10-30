@@ -97,14 +97,11 @@ fn text_matches(operator: ConditionOperator, text: &str, expected: &str) -> bool
 
 impl Condition {
     fn matches(&self, subject: &Subject<'_>) -> bool {
-        let check = |text: Option<&str>| {
-            text.is_some_and(|text| text_matches(self.operator, text, &self.value))
-        };
+        let check =
+            |text: Option<&str>| text.is_some_and(|text| text_matches(self.operator, text, &self.value));
         match self.field {
             ConditionField::Application => {
-                check(Some(subject.identifier))
-                    || check(Some(subject.name))
-                    || check(subject.display_name)
+                check(Some(subject.identifier)) || check(Some(subject.name)) || check(subject.display_name)
             }
             ConditionField::ExecutablePath => check(subject.executable_path),
             ConditionField::WindowTitle => check(subject.window_title),
@@ -174,8 +171,7 @@ impl Classifier {
             result.category_id = result.category_id.or(defaults.category_id);
         }
         if result.project_id.is_none() {
-            result.project_id =
-                result.category_id.and_then(|id| self.category_projects.get(&id).copied());
+            result.project_id = result.category_id.and_then(|id| self.category_projects.get(&id).copied());
         }
         result
     }
@@ -236,7 +232,13 @@ mod tests {
         Condition { field, operator, value: value.into() }
     }
 
-    fn rule(id: i64, priority: i64, conditions: Vec<Condition>, project: Option<i64>, category: Option<i64>) -> Rule {
+    fn rule(
+        id: i64,
+        priority: i64,
+        conditions: Vec<Condition>,
+        project: Option<i64>,
+        category: Option<i64>,
+    ) -> Rule {
         Rule {
             id,
             name: format!("rule {id}"),
@@ -280,14 +282,20 @@ mod tests {
         let matching = rule(
             1,
             10,
-            vec![is_code(), condition(ConditionField::ExecutablePath, ConditionOperator::Contains, "/Notes-Saver/")],
+            vec![
+                is_code(),
+                condition(ConditionField::ExecutablePath, ConditionOperator::Contains, "/Notes-Saver/"),
+            ],
             Some(7),
             None,
         );
         let failing = rule(
             2,
             10,
-            vec![is_code(), condition(ConditionField::ExecutablePath, ConditionOperator::Contains, "/Other/")],
+            vec![
+                is_code(),
+                condition(ConditionField::ExecutablePath, ConditionOperator::Contains, "/Other/"),
+            ],
             Some(8),
             None,
         );
@@ -297,30 +305,24 @@ mod tests {
 
     #[test]
     fn lower_priority_number_wins() {
-        let rules = vec![
-            rule(1, 20, vec![is_code()], Some(1), None),
-            rule(2, 10, vec![is_code()], Some(2), None),
-        ];
+        let rules =
+            vec![rule(1, 20, vec![is_code()], Some(1), None), rule(2, 10, vec![is_code()], Some(2), None)];
         let classifier = Classifier::new(rules, &[], &[]);
         assert_eq!(classifier.classify(None, &code_subject()).project_id, Some(2));
     }
 
     #[test]
     fn equal_priority_falls_back_to_rule_id() {
-        let rules = vec![
-            rule(5, 10, vec![is_code()], Some(5), None),
-            rule(3, 10, vec![is_code()], Some(3), None),
-        ];
+        let rules =
+            vec![rule(5, 10, vec![is_code()], Some(5), None), rule(3, 10, vec![is_code()], Some(3), None)];
         let classifier = Classifier::new(rules, &[], &[]);
         assert_eq!(classifier.classify(None, &code_subject()).project_id, Some(3));
     }
 
     #[test]
     fn project_and_category_are_decided_independently() {
-        let rules = vec![
-            rule(1, 10, vec![is_code()], None, Some(4)),
-            rule(2, 20, vec![is_code()], Some(9), None),
-        ];
+        let rules =
+            vec![rule(1, 10, vec![is_code()], None, Some(4)), rule(2, 20, vec![is_code()], Some(9), None)];
         let classifier = Classifier::new(rules, &[], &[]);
         let result = classifier.classify(None, &code_subject());
         assert_eq!(result, Classification { project_id: Some(9), category_id: Some(4) });

@@ -4,8 +4,7 @@ use crate::error::{CoreError, Result};
 use crate::projects::{Rule, RuleInput};
 use crate::time::now_ms;
 
-const COLUMNS: &str =
-    "id, name, rule_condition, target_project_id, target_category_id, priority, enabled";
+const COLUMNS: &str = "id, name, rule_condition, target_project_id, target_category_id, priority, enabled";
 
 fn from_row(row: &Row<'_>) -> rusqlite::Result<(Rule, String)> {
     Ok((
@@ -28,20 +27,15 @@ fn parse((mut rule, conditions): (Rule, String)) -> Result<Rule> {
 }
 
 pub fn list(connection: &Connection) -> Result<Vec<Rule>> {
-    let mut statement = connection.prepare(&format!(
-        "SELECT {COLUMNS} FROM classification_rules ORDER BY priority, id"
-    ))?;
+    let mut statement =
+        connection.prepare(&format!("SELECT {COLUMNS} FROM classification_rules ORDER BY priority, id"))?;
     let rows = statement.query_map([], from_row)?;
     rows.map(|row| parse(row?)).collect()
 }
 
 pub fn get(connection: &Connection, id: i64) -> Result<Rule> {
     let row = connection
-        .query_row(
-            &format!("SELECT {COLUMNS} FROM classification_rules WHERE id = ?1"),
-            [id],
-            from_row,
-        )
+        .query_row(&format!("SELECT {COLUMNS} FROM classification_rules WHERE id = ?1"), [id], from_row)
         .optional()?
         .ok_or(CoreError::NotFound("Rule"))?;
     parse(row)

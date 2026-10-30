@@ -80,9 +80,7 @@ pub fn create(sink: EventSink) -> Box<dyn ActivityTracker> {
             Ok(tracker) => Box::new(tracker),
             Err(error) => Box::new(UnsupportedTracker::new(format!("Could not reach the X server: {error}"))),
         },
-        DisplayServer::Wayland => {
-            Box::new(LinuxWaylandTracker::new(sink, desktop, desktop_name))
-        }
+        DisplayServer::Wayland => Box::new(LinuxWaylandTracker::new(sink, desktop, desktop_name)),
         DisplayServer::None => Box::new(UnsupportedTracker::new(
             "No graphical session was found. DayTrace needs X11 or Wayland.",
         )),

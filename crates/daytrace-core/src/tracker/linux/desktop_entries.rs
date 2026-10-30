@@ -189,18 +189,16 @@ mod tests {
         let app = ForegroundApp { identifier: "code".into(), name: "code".into(), ..Default::default() };
         assert_eq!(entries.enrich(app).name, "Visual Studio Code");
 
-        let by_file = ForegroundApp {
-            identifier: "code.desktop".into(),
-            name: "x".into(),
-            ..Default::default()
-        };
+        let by_file =
+            ForegroundApp { identifier: "code.desktop".into(), name: "x".into(), ..Default::default() };
         assert_eq!(entries.enrich(by_file).name, "Visual Studio Code");
     }
 
     #[test]
     fn unknown_apps_keep_their_reported_name() {
         let entries = DesktopEntries::default();
-        let app = ForegroundApp { identifier: "mystery".into(), name: "Mystery".into(), ..Default::default() };
+        let app =
+            ForegroundApp { identifier: "mystery".into(), name: "Mystery".into(), ..Default::default() };
         assert_eq!(entries.enrich(app).name, "Mystery");
     }
 

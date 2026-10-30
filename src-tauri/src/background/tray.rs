@@ -30,15 +30,15 @@ fn build(app: &AppHandle) -> tauri::Result<TrayItems> {
     let separator = PredefinedMenuItem::separator(app)?;
     let menu = Menu::with_items(app, &[&open, &status, &separator, &pause, &resume, &separator, &exit])?;
 
-    let mut tray = TrayIconBuilder::with_id("main")
-        .tooltip("DayTrace")
-        .menu(&menu)
-        .on_menu_event(|app, event| match event.id.as_ref() {
-            "open" => show_window(app),
-            "pause" => app.state::<AppState>().send(Message::Pause { until: None }),
-            "resume" => app.state::<AppState>().send(Message::Resume),
-            "quit" => quit(app),
-            _ => {}
+    let mut tray =
+        TrayIconBuilder::with_id("main").tooltip("DayTrace").menu(&menu).on_menu_event(|app, event| {
+            match event.id.as_ref() {
+                "open" => show_window(app),
+                "pause" => app.state::<AppState>().send(Message::Pause { until: None }),
+                "resume" => app.state::<AppState>().send(Message::Resume),
+                "quit" => quit(app),
+                _ => {}
+            }
         });
     if let Some(icon) = app.default_window_icon() {
         tray = tray.icon(icon.clone());
@@ -76,10 +76,8 @@ pub fn update_status(app: &AppHandle, status: &TrackerStatus) {
     let Some(tray) = app.try_state::<TrayState>() else { return };
     let items = lock(&tray.0);
     let Some(items) = items.as_ref() else { return };
-    let can_pause = !matches!(
-        status.state,
-        TrackingState::Disabled | TrackingState::Paused | TrackingState::Manual
-    );
+    let can_pause =
+        !matches!(status.state, TrackingState::Disabled | TrackingState::Paused | TrackingState::Manual);
     let _ = items.status.set_text(describe(status));
     let _ = items.pause.set_enabled(can_pause);
     let _ = items.resume.set_enabled(status.state == TrackingState::Paused);

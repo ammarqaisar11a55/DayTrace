@@ -108,11 +108,7 @@ fn dpkg_owns(executable: &Path) -> bool {
 }
 
 fn rpm_owns(executable: &Path) -> bool {
-    Command::new("rpm")
-        .arg("-qf")
-        .arg(executable)
-        .output()
-        .is_ok_and(|output| output.status.success())
+    Command::new("rpm").arg("-qf").arg(executable).output().is_ok_and(|output| output.status.success())
 }
 
 pub fn detect_install() -> InstallMethod {
@@ -181,7 +177,10 @@ mod tests {
     #[test]
     fn install_methods_are_classified() {
         assert_eq!(classify_install(&InstallFacts { windows: true, ..facts() }), InstallMethod::Nsis);
-        assert_eq!(classify_install(&InstallFacts { appimage: Some("/a"), ..facts() }), InstallMethod::AppImage);
+        assert_eq!(
+            classify_install(&InstallFacts { appimage: Some("/a"), ..facts() }),
+            InstallMethod::AppImage
+        );
         assert_eq!(classify_install(&InstallFacts { owned_by_dpkg: true, ..facts() }), InstallMethod::Deb);
         assert_eq!(classify_install(&InstallFacts { owned_by_rpm: true, ..facts() }), InstallMethod::Rpm);
         assert_eq!(classify_install(&facts()), InstallMethod::Unsupported);
@@ -203,7 +202,9 @@ mod tests {
     fn only_self_contained_installs_can_update_themselves() {
         assert!(InstallMethod::Nsis.can_self_update());
         assert!(InstallMethod::AppImage.can_self_update());
-        for method in [InstallMethod::Deb, InstallMethod::Rpm, InstallMethod::Snap, InstallMethod::Unsupported] {
+        for method in
+            [InstallMethod::Deb, InstallMethod::Rpm, InstallMethod::Snap, InstallMethod::Unsupported]
+        {
             assert!(!method.can_self_update());
             assert!(method.guidance().is_some());
         }

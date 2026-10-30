@@ -26,16 +26,30 @@ fn window(connection: &RustConnection, root: u32, class: &[u8], title: &str, pid
         .unwrap();
     connection.change_property8(PropMode::REPLACE, id, AtomEnum::WM_CLASS, AtomEnum::STRING, class).unwrap();
     connection
-        .change_property8(PropMode::REPLACE, id, atom(connection, "_NET_WM_NAME"), atom(connection, "UTF8_STRING"), title.as_bytes())
+        .change_property8(
+            PropMode::REPLACE,
+            id,
+            atom(connection, "_NET_WM_NAME"),
+            atom(connection, "UTF8_STRING"),
+            title.as_bytes(),
+        )
         .unwrap();
-    connection.change_property32(PropMode::REPLACE, id, atom(connection, "_NET_WM_PID"), AtomEnum::CARDINAL, &[pid]).unwrap();
+    connection
+        .change_property32(PropMode::REPLACE, id, atom(connection, "_NET_WM_PID"), AtomEnum::CARDINAL, &[pid])
+        .unwrap();
     connection.flush().unwrap();
     id
 }
 
 fn activate(connection: &RustConnection, root: u32, window: u32) {
     connection
-        .change_property32(PropMode::REPLACE, root, atom(connection, "_NET_ACTIVE_WINDOW"), AtomEnum::WINDOW, &[window])
+        .change_property32(
+            PropMode::REPLACE,
+            root,
+            atom(connection, "_NET_ACTIVE_WINDOW"),
+            AtomEnum::WINDOW,
+            &[window],
+        )
         .unwrap();
     // A round trip guarantees the server has applied the change.
     connection.get_input_focus().unwrap().reply().unwrap();

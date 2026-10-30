@@ -53,7 +53,10 @@ pub fn update_application(
 
 #[tauri::command(async)]
 pub fn delete_application(app: AppHandle, state: State<'_, AppState>, id: i64) -> CommandResult<()> {
-    state.database.write(|connection| applications::delete_with_history(connection, id)).map_err(to_message)?;
+    state
+        .database
+        .write(|connection| applications::delete_with_history(connection, id))
+        .map_err(to_message)?;
     state.with_tracker(|tracker| tracker.data_replaced());
     refresh(&app, &state);
     Ok(())
@@ -81,7 +84,8 @@ fn icon_data_url(path: &str) -> Option<String> {
 
 #[tauri::command(async)]
 pub fn application_icon(state: State<'_, AppState>, id: i64) -> CommandResult<Option<String>> {
-    let application = state.database.read(|connection| applications::get(connection, id)).map_err(to_message)?;
+    let application =
+        state.database.read(|connection| applications::get(connection, id)).map_err(to_message)?;
     Ok(application.icon_path.as_deref().and_then(icon_data_url))
 }
 
@@ -91,8 +95,13 @@ pub fn list_projects(state: State<'_, AppState>, include_archived: bool) -> Comm
 }
 
 #[tauri::command(async)]
-pub fn create_project(app: AppHandle, state: State<'_, AppState>, input: ProjectInput) -> CommandResult<Project> {
-    let project = state.database.write(|connection| projects::create(connection, &input)).map_err(to_message)?;
+pub fn create_project(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    input: ProjectInput,
+) -> CommandResult<Project> {
+    let project =
+        state.database.write(|connection| projects::create(connection, &input)).map_err(to_message)?;
     notify_data_changed(&app);
     Ok(project)
 }
@@ -117,7 +126,10 @@ pub fn archive_project(
     id: i64,
     archived: bool,
 ) -> CommandResult<()> {
-    state.database.write(|connection| projects::set_archived(connection, id, archived)).map_err(to_message)?;
+    state
+        .database
+        .write(|connection| projects::set_archived(connection, id, archived))
+        .map_err(to_message)?;
     notify_data_changed(&app);
     Ok(())
 }
@@ -135,8 +147,13 @@ pub fn list_categories(state: State<'_, AppState>) -> CommandResult<Vec<Category
 }
 
 #[tauri::command(async)]
-pub fn create_category(app: AppHandle, state: State<'_, AppState>, input: CategoryInput) -> CommandResult<Category> {
-    let category = state.database.write(|connection| categories::create(connection, &input)).map_err(to_message)?;
+pub fn create_category(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    input: CategoryInput,
+) -> CommandResult<Category> {
+    let category =
+        state.database.write(|connection| categories::create(connection, &input)).map_err(to_message)?;
     notify_data_changed(&app);
     Ok(category)
 }
@@ -174,8 +191,14 @@ pub fn create_rule(app: AppHandle, state: State<'_, AppState>, input: RuleInput)
 }
 
 #[tauri::command(async)]
-pub fn update_rule(app: AppHandle, state: State<'_, AppState>, id: i64, input: RuleInput) -> CommandResult<Rule> {
-    let rule = state.database.write(|connection| rules::update(connection, id, &input)).map_err(to_message)?;
+pub fn update_rule(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    id: i64,
+    input: RuleInput,
+) -> CommandResult<Rule> {
+    let rule =
+        state.database.write(|connection| rules::update(connection, id, &input)).map_err(to_message)?;
     refresh(&app, &state);
     Ok(rule)
 }
@@ -208,8 +231,10 @@ pub fn apply_rules(
     to: String,
 ) -> CommandResult<RulePreview> {
     let (start, end) = local_range_str(&from, &to).map_err(to_message)?;
-    let result =
-        state.database.write(|connection| classification::apply(connection, start, end)).map_err(to_message)?;
+    let result = state
+        .database
+        .write(|connection| classification::apply(connection, start, end))
+        .map_err(to_message)?;
     notify_data_changed(&app);
     Ok(result)
 }

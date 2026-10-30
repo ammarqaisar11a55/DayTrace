@@ -232,7 +232,9 @@ impl Engine {
         current.end = boundary;
 
         match next {
-            Some(next) if current.activity.can_be_blip() && boundary - current.start < self.config.blip_ms => {
+            Some(next)
+                if current.activity.can_be_blip() && boundary - current.start < self.config.blip_ms =>
+            {
                 self.effects.push(Effect::Remove { id: current.id });
                 self.open(next, current.start, now);
             }
@@ -381,7 +383,12 @@ mod tests {
         let mut engine = engine();
         let store = run(
             &mut engine,
-            vec![tick(0, app(1), 0), tick(10 * SECOND, app(1), 0), tick(15 * SECOND, app(2), 0), tick(20 * SECOND, app(2), 0)],
+            vec![
+                tick(0, app(1), 0),
+                tick(10 * SECOND, app(1), 0),
+                tick(15 * SECOND, app(2), 0),
+                tick(20 * SECOND, app(2), 0),
+            ],
         );
         let segments = store.segments();
         assert_eq!(segments.len(), 2);
@@ -469,7 +476,12 @@ mod tests {
         let mut engine = engine();
         let store = run(
             &mut engine,
-            vec![tick(0, app(1), 0), tick(10 * SECOND, app(2), 0), tick(11 * SECOND, app(3), 0), tick(20 * SECOND, app(3), 0)],
+            vec![
+                tick(0, app(1), 0),
+                tick(10 * SECOND, app(2), 0),
+                tick(11 * SECOND, app(3), 0),
+                tick(20 * SECOND, app(3), 0),
+            ],
         );
         let segments = store.segments();
         assert_eq!(segments.len(), 2);
@@ -491,7 +503,12 @@ mod tests {
         let mut engine = engine();
         let store = run(
             &mut engine,
-            vec![tick(0, app(1), 0), tick(10 * SECOND, Focus::Excluded, 0), tick(40 * SECOND, app(1), 0), tick(50 * SECOND, app(1), 0)],
+            vec![
+                tick(0, app(1), 0),
+                tick(10 * SECOND, Focus::Excluded, 0),
+                tick(40 * SECOND, app(1), 0),
+                tick(50 * SECOND, app(1), 0),
+            ],
         );
         assert_eq!(
             store.summary(),
@@ -522,7 +539,12 @@ mod tests {
         let later = 2 * 60 * MINUTE;
         let store = run(
             &mut engine,
-            vec![tick(0, app(1), 0), tick(5 * SECOND, app(1), 0), tick(later, app(1), 0), tick(later + 5 * SECOND, app(1), 0)],
+            vec![
+                tick(0, app(1), 0),
+                tick(5 * SECOND, app(1), 0),
+                tick(later, app(1), 0),
+                tick(later + 5 * SECOND, app(1), 0),
+            ],
         );
         assert_eq!(
             store.summary(),
@@ -603,7 +625,14 @@ mod tests {
                 window_title: None,
             })
         };
-        let store = run(&mut engine, vec![tick(0, classified(Some(1)), 0), tick(10 * SECOND, classified(Some(2)), 0), tick(20 * SECOND, classified(Some(2)), 0)]);
+        let store = run(
+            &mut engine,
+            vec![
+                tick(0, classified(Some(1)), 0),
+                tick(10 * SECOND, classified(Some(2)), 0),
+                tick(20 * SECOND, classified(Some(2)), 0),
+            ],
+        );
         assert_eq!(store.segments().len(), 2);
     }
 
@@ -652,9 +681,17 @@ mod tests {
 
                 let effects = match random.next(2_000) {
                     0 => engine.stop(now),
-                    1 => engine.start_manual(now, ManualActivity { label: None, project_id: None, category_id: None }),
+                    1 => engine.start_manual(
+                        now,
+                        ManualActivity { label: None, project_id: None, category_id: None },
+                    ),
                     2 => engine.stop_manual(now),
-                    _ => engine.tick(Tick { now, focus: focus.clone(), idle_ms: Some(idle), locked: random.next(500) == 0 }),
+                    _ => engine.tick(Tick {
+                        now,
+                        focus: focus.clone(),
+                        idle_ms: Some(idle),
+                        locked: random.next(500) == 0,
+                    }),
                 };
 
                 // Overlap is not checked here: a backwards clock jump legitimately

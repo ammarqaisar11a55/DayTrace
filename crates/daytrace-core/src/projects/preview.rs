@@ -72,8 +72,7 @@ fn classify_all(
     mut visit: impl FnMut(&Candidate, Classification, &Application) -> Result<()>,
 ) -> Result<RulePreview> {
     let applications = applications::list(connection)?;
-    let classifier =
-        Classifier::new(rules::list(connection)?, &applications, &categories::list(connection)?);
+    let classifier = Classifier::new(rules::list(connection)?, &applications, &categories::list(connection)?);
 
     let mut preview = RulePreview::default();
     for candidate in candidates(connection, from, to)? {

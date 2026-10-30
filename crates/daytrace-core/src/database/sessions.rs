@@ -176,23 +176,15 @@ pub fn delete_all(connection: &Connection) -> Result<usize> {
 
 /// Removes sessions that ended before the cutoff, for the retention setting.
 pub fn delete_before(connection: &Connection, cutoff: i64) -> Result<usize> {
-    Ok(connection.execute(
-        "DELETE FROM activity_sessions WHERE end_time < ?1 AND is_open = 0",
-        [cutoff],
-    )?)
+    Ok(connection.execute("DELETE FROM activity_sessions WHERE end_time < ?1 AND is_open = 0", [cutoff])?)
 }
 
 /// Closes sessions left open by a crash or power loss at their last checkpoint.
 pub fn recover_open(connection: &Connection) -> Result<usize> {
     let now = now_ms();
-    connection.execute(
-        "DELETE FROM activity_sessions WHERE is_open = 1 AND end_time <= start_time",
-        [],
-    )?;
-    Ok(connection.execute(
-        "UPDATE activity_sessions SET is_open = 0, updated_at = ?1 WHERE is_open = 1",
-        [now],
-    )?)
+    connection.execute("DELETE FROM activity_sessions WHERE is_open = 1 AND end_time <= start_time", [])?;
+    Ok(connection
+        .execute("UPDATE activity_sessions SET is_open = 0, updated_at = ?1 WHERE is_open = 1", [now])?)
 }
 
 /// A session as the tracker writes it.
@@ -387,7 +379,13 @@ mod tests {
         db.write(|c| insert_tracked(c, &tracked(2_500, 3_500, false))).unwrap();
         let filter = SessionFilter { from: 3_000, to: 4_000, ..Default::default() };
         assert_eq!(db.read(|c| list(c, &filter)).unwrap().len(), 1);
-        let newest = SessionFilter { from: 0, to: 9_000, limit: Some(1), newest_first: Some(true), ..Default::default() };
+        let newest = SessionFilter {
+            from: 0,
+            to: 9_000,
+            limit: Some(1),
+            newest_first: Some(true),
+            ..Default::default()
+        };
         assert_eq!(db.read(|c| list(c, &newest)).unwrap()[0].start_time, 2_500);
     }
 }

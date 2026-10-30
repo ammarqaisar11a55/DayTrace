@@ -13,7 +13,8 @@ pub async fn check(app: &AppHandle) -> Result<Option<Update>, String> {
         .map_err(|error| error.to_string())?
         .update_channel;
 
-    let endpoint = updates::manifest_url(channel).parse().map_err(|_| "Invalid update address".to_string())?;
+    let endpoint =
+        updates::manifest_url(channel).parse().map_err(|_| "Invalid update address".to_string())?;
     let updater = app
         .updater_builder()
         .version_comparator(move |current, remote| {
