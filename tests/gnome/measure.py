@@ -36,13 +36,15 @@ def tree(root):
 
 
 def memory_mb(pid):
+    """Proportional memory, counting pages that are swapped out."""
+    total = 0.0
     try:
         for line in open(f"/proc/{pid}/smaps_rollup"):
-            if line.startswith("Pss:"):
-                return int(line.split()[1]) / 1024
+            if line.startswith(("Pss:", "SwapPss:")):
+                total += int(line.split()[1]) / 1024
     except OSError:
         pass
-    return 0.0
+    return total
 
 
 def name(pid):
