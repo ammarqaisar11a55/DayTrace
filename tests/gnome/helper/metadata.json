@@ -1,0 +1,7 @@
+{
+  "uuid": "daytrace-test-helper@ammarqaisar11a55.github.io",
+  "name": "DayTrace test helper",
+  "description": "Test only. Unlocks Shell.Eval inside the disposable test session so that a test can switch windows.",
+  "shell-version": ["45", "46", "47", "48", "49", "50"],
+  "session-modes": ["user"]
+}
