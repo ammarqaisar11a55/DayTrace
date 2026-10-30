@@ -24,7 +24,7 @@ compiles. Last updated 2026-10-31.
 | Windows core logic | 110 tests pass on `windows-latest` in CI, including live Win32 calls for process inspection and idle time |
 | CI on Ubuntu 24.04 | Clippy, the X11 test and all 23 end-to-end checks pass on GitHub Actions |
 | Release workflow | v0.1.0 built and published every package. Both update manifests are served with all six platform entries, and the published `.deb` and Windows installer verify against the shipped key |
-| Snap build | Builds on GitHub Actions. Its metadata, launcher and binary were inspected. It has not been installed |
+| Snap build and Store listing | Builds on GitHub Actions, and revision 1 is on the Store's edge channel. Its metadata, launcher and binary were inspected. It has not been installed |
 
 ## Compiled only, not run
 

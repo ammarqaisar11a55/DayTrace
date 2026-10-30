@@ -35,18 +35,13 @@ Updates install from inside DayTrace. Some distributions need `libfuse2` to run 
 
 ## Snap
 
-Download the snap from GitHub Releases and install it directly:
+DayTrace is on the Snap Store's edge channel while it is being tested:
 
 ```bash
-sudo snap install --dangerous ./daytrace_x.y.z_amd64.snap
+sudo snap install daytrace --edge
 ```
 
-`--dangerous` is needed for files from outside the Store, and these do not update automatically.
-Once DayTrace is on the Snap Store, install it from there, and `snapd` will keep it updated:
-
-```bash
-sudo snap install daytrace
-```
+`snapd` keeps it updated.
 
 To let DayTrace notice idle time and screen locks:
 
