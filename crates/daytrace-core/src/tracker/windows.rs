@@ -225,14 +225,16 @@ pub fn executable_icon_png(path: &str) -> Option<Vec<u8>> {
         let _ = DestroyIcon(file_info.hIcon);
         info.ok()?;
 
-        let mut header = BITMAPINFO::default();
-        header.bmiHeader = BITMAPINFOHEADER {
-            biSize: size_of::<BITMAPINFOHEADER>() as u32,
-            biWidth: SIZE,
-            biHeight: -SIZE,
-            biPlanes: 1,
-            biBitCount: 32,
-            biCompression: BI_RGB.0,
+        let mut header = BITMAPINFO {
+            bmiHeader: BITMAPINFOHEADER {
+                biSize: size_of::<BITMAPINFOHEADER>() as u32,
+                biWidth: SIZE,
+                biHeight: -SIZE,
+                biPlanes: 1,
+                biBitCount: 32,
+                biCompression: BI_RGB.0,
+                ..Default::default()
+            },
             ..Default::default()
         };
         let mut pixels = vec![0u8; (SIZE * SIZE * 4) as usize];
@@ -254,7 +256,7 @@ pub fn executable_icon_png(path: &str) -> Option<Vec<u8>> {
         }
 
         // Windows stores pixels as BGRA.
-        for pixel in pixels.chunks_exact_mut(4) {
+        for pixel in pixels.as_chunks_mut::<4>().0 {
             pixel.swap(0, 2);
         }
         let mut output = Vec::new();

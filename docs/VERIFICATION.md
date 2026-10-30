@@ -21,12 +21,14 @@ compiles. Last updated 2026-10-30.
 | Update signatures | Real AppImage and `.deb` verified against the shipped key; tampered and wrongly signed files rejected |
 | AppImage | Launched in real GNOME, window opened, database created |
 | `.deb`, `.rpm` | Built and signed. `.deb` contents inspected. Neither has been installed |
+| Windows core logic | 110 tests pass on `windows-latest` in CI, including live Win32 calls for process inspection and idle time |
+| CI on Ubuntu 24.04 | Clippy, the X11 test and all 23 end-to-end checks pass on GitHub Actions |
 
 ## Compiled only, not run
 
 | Area | Status |
 | --- | --- |
-| Windows backend and application | Type-checks against `x86_64-pc-windows-gnu`. `core` tests run on `windows-latest` in CI once pushed |
+| Windows focus detection and application | The application type-checks for Windows but has never been launched. CI has no interactive desktop, so foreground detection, the event hooks and the installer are untested |
 | KDE Plasma backend | Compiles. Written from KWin's scripting documentation and never run against KWin |
 | GNOME extension on Shell 42 to 44 | The legacy variant has never been loaded. Shell 45 to 49 use the modern variant, tested only on 50 |
 
@@ -34,12 +36,12 @@ compiles. Last updated 2026-10-30.
 
 | Area | Why |
 | --- | --- |
-| Windows installation, updates, lock, suspend, startup | Needs a real Windows 10 and 11 machine |
+| Windows installation, foreground tracking, updates, lock, suspend, startup | Needs a real Windows 10 and 11 desktop |
 | Installing `.deb` and `.rpm`, tray behaviour | Needs root, and a real desktop session for the tray |
 | Snap build and install | Needs LXD or Multipass. `snapcraft.yaml` has never been built |
 | Applying an update end to end | Needs a published release. Only signature checks and version rules are tested |
 | Real suspend, resume and screen lock | Handled by tests in simulated time only; real `logind` signals were not triggered |
-| GitHub Actions workflows | Have not run, because nothing has been pushed |
+| Release workflow | The CI workflow runs on every push. The release workflow has not run, because no version has been tagged |
 | Fedora, Debian, Linux Mint | Not tested. Only Ubuntu 26.04 was available |
 
 ## Running the suites

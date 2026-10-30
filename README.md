@@ -40,7 +40,7 @@ Screenshots show generated sample data.
 | wlroots compositors (Sway and others) | Tested on Sway. No program paths |
 | X11 | Tested against a real X server |
 | KDE Plasma on Wayland | Implemented, not yet tested on KDE |
-| Windows 10 and 11 | Implemented and compile-checked, not yet tested on Windows |
+| Windows 10 and 11 | Core logic tested on Windows in CI. The application has not yet been run on a Windows desktop |
 
 [docs/VERIFICATION.md](docs/VERIFICATION.md) lists exactly what has and has not been run. DayTrace
 reports what works on your computer during setup and in Settings, and it never guesses.
