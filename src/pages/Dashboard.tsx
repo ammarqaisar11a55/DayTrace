@@ -42,7 +42,7 @@ function RecentSessions({ sessions, onSelect }: { sessions: Session[]; onSelect:
             onClick={() => onSelect(session)}
             className="flex w-full items-center gap-2.5 rounded px-1.5 py-1 text-left text-[13px] hover:bg-rule/40"
           >
-            <span className="w-12 shrink-0 text-ink-3">{formatClock(session.startTime)}</span>
+            <span className="w-[62px] shrink-0 whitespace-nowrap text-ink-3">{formatClock(session.startTime)}</span>
             <span className="min-w-0 flex-1 truncate">{sessionTitle(session)}</span>
             <span className="shrink-0 text-ink-2">{formatDuration(session.endTime - session.startTime)}</span>
           </button>
@@ -111,6 +111,7 @@ export function Dashboard() {
               <ActivityBars
                 buckets={singleDay ? report.data.hourly : report.data.daily}
                 label={singleDay ? hourLabel : dayLabel}
+                perHour={singleDay}
                 ariaLabel={singleDay ? "Active and idle time by hour" : "Active and idle time by day"}
               />
             </Section>

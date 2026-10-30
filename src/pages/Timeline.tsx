@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { AppIcon } from "../components/AppIcon";
 import { DayRibbon } from "../components/DayRibbon";
 import { CategoryOptions, ProjectOptions, SessionDialog } from "../components/SessionDialog";
-import { Button, ColorSwatch, Dialog, Empty, ErrorNote, Field, IconButton, Input, PageHeader, Select } from "../components/ui";
+import { Button, Dialog, Empty, ErrorNote, Field, IconButton, Input, PageHeader, Select } from "../components/ui";
 import { useData } from "../hooks/useData";
 import { api } from "../services/api";
 import { useApp } from "../stores/app";
@@ -110,11 +110,17 @@ function GroupRow({ group, onSelect }: { group: SessionGroup; onSelect: (session
         onClick={() => (repeated ? setExpanded(!expanded) : onSelect(first))}
         className="flex w-full items-center gap-3 rounded px-2 py-1.5 text-left hover:bg-rule/40"
       >
-        <span className="w-12 shrink-0 text-xs text-ink-3">{formatClock(group.startTime)}</span>
+        <span className="w-[62px] shrink-0 text-xs whitespace-nowrap text-ink-3">{formatClock(group.startTime)}</span>
         <span
           aria-hidden
           className={`h-7 w-1 shrink-0 rounded-sm ${away ? "hatch-idle" : ""}`}
-          style={{ background: away ? undefined : (first.categoryColor ?? "var(--pen)") }}
+          style={{
+            background: away
+              ? undefined
+              : first.sessionType === "unknown"
+                ? "var(--idle)"
+                : (first.categoryColor ?? "var(--pen)"),
+          }}
         />
         {first.sessionType === "active" ? (
           <AppIcon id={first.applicationId} name={group.title} />
@@ -135,7 +141,7 @@ function GroupRow({ group, onSelect }: { group: SessionGroup; onSelect: (session
         <span className="w-16 shrink-0 text-right text-[13px] text-ink-2">{formatDuration(group.totalMs)}</span>
       </button>
       {expanded && (
-        <ul className="mb-1 ml-[76px] border-l border-rule pl-3">
+        <ul className="mb-1 ml-[86px] border-l border-rule pl-3">
           {group.sessions.map((session) => (
             <li key={session.id}>
               <button
@@ -179,7 +185,6 @@ export function Timeline() {
   const { data: categories = [] } = useData(() => api.listCategories(), []);
 
   const groups = useMemo(() => groupConsecutive(sessions.data ?? []), [sessions.data]);
-  const categoryCount = new Set((sessions.data ?? []).map((session) => session.categoryId)).size;
 
   return (
     <>
@@ -237,12 +242,6 @@ export function Timeline() {
             </option>
           ))}
         </Select>
-        {categoryCount > 1 && (
-          <span className="inline-flex items-center gap-1.5 text-xs text-ink-3">
-            <ColorSwatch color="var(--pen)" />
-            Bars show each session's category color
-          </span>
-        )}
       </div>
 
       {sessions.error && <ErrorNote message={sessions.error} />}

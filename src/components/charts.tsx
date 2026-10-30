@@ -15,6 +15,7 @@ import { formatDate, formatDuration, formatHours } from "../utils/format";
 import { ColorSwatch, Empty } from "./ui";
 
 const HOUR = 3_600_000;
+const MINUTE = 60_000;
 const AXIS = { fontSize: 11, fill: "var(--ink-3)" };
 
 interface Point {
@@ -27,10 +28,12 @@ function ChartTooltip({
   active,
   payload,
   label,
+  unit = HOUR,
 }: {
   active?: boolean;
   payload?: readonly { name?: unknown; value?: unknown; color?: string }[];
   label?: string | number;
+  unit?: number;
 }) {
   if (!active || !payload?.length) return null;
   return (
@@ -39,7 +42,7 @@ function ChartTooltip({
       {payload.map((entry) => (
         <div key={String(entry.name)} className="flex items-center gap-1.5 text-ink-2">
           <ColorSwatch color={entry.color ?? null} size={8} />
-          {String(entry.name)}: {formatDuration(Number(entry.value) * HOUR)}
+          {String(entry.name)}: {formatDuration(Number(entry.value) * unit)}
         </div>
       ))}
     </div>
@@ -61,11 +64,11 @@ function SeriesLegend() {
   );
 }
 
-function toPoints(buckets: Bucket[], label: (key: string) => string): Point[] {
+function toPoints(buckets: Bucket[], label: (key: string) => string, unit = HOUR): Point[] {
   return buckets.map((bucket) => ({
     label: label(bucket.key),
-    active: bucket.activeMs / HOUR,
-    idle: bucket.idleMs / HOUR,
+    active: bucket.activeMs / unit,
+    idle: bucket.idleMs / unit,
   }));
 }
 
@@ -75,13 +78,17 @@ export function ActivityBars({
   label,
   height = 220,
   ariaLabel,
+  perHour,
 }: {
   buckets: Bucket[];
   label: (key: string) => string;
   height?: number;
   ariaLabel: string;
+  /** Buckets are single clock hours, so the axis is fixed at 60 minutes. */
+  perHour?: boolean;
 }) {
-  const points = useMemo(() => toPoints(buckets, label), [buckets, label]);
+  const unit = perHour ? MINUTE : HOUR;
+  const points = useMemo(() => toPoints(buckets, label, unit), [buckets, label, unit]);
   return (
     <figure aria-label={ariaLabel}>
       <SeriesLegend />
@@ -89,8 +96,15 @@ export function ActivityBars({
         <BarChart data={points} margin={{ top: 4, right: 0, bottom: 0, left: -24 }} barCategoryGap="28%">
           <CartesianGrid vertical={false} stroke="var(--rule)" />
           <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: "var(--rule-strong)" }} interval="preserveStartEnd" minTickGap={18} />
-          <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={(value: number) => `${value}h`} allowDecimals={false} />
-          <Tooltip content={<ChartTooltip />} cursor={{ fill: "var(--rule)", opacity: 0.4 }} />
+          <YAxis
+            tick={AXIS}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(value: number) => (perHour ? `${value}m` : `${value}h`)}
+            allowDecimals={false}
+            {...(perHour ? { domain: [0, 60], ticks: [0, 15, 30, 45, 60] } : {})}
+          />
+          <Tooltip content={<ChartTooltip unit={unit} />} cursor={{ fill: "var(--rule)", opacity: 0.4 }} />
           <Bar dataKey="active" name="Active" stackId="time" fill="var(--pen)" isAnimationActive={false} />
           <Bar dataKey="idle" name="Idle" stackId="time" fill="var(--idle)" radius={[3, 3, 0, 0]} isAnimationActive={false} />
         </BarChart>
@@ -110,7 +124,7 @@ export function TrendLine({ buckets, height = 220 }: { buckets: Bucket[]; height
           <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: "var(--rule-strong)" }} interval="preserveStartEnd" minTickGap={28} />
           <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={(value: number) => `${value}h`} allowDecimals={false} />
           <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--rule-strong)" }} />
-          <Area type="monotone" dataKey="active" name="Active" stroke="var(--pen)" strokeWidth={2} fill="var(--pen-soft)" fillOpacity={0.7} isAnimationActive={false} activeDot={{ r: 4 }} />
+          <Area type="linear" dataKey="active" name="Active" stroke="var(--pen)" strokeWidth={2} fill="var(--pen-soft)" fillOpacity={0.7} isAnimationActive={false} activeDot={{ r: 4 }} />
         </AreaChart>
       </ResponsiveContainer>
     </figure>
@@ -173,14 +187,14 @@ export function ShareBar({ items, empty }: { items: RankedItem[]; empty: string 
             key={`${item.id}-${item.name}`}
             title={`${item.name}: ${formatDuration(item.ms)}`}
             className="first:rounded-l-[3px] last:rounded-r-[3px]"
-            style={{ flexGrow: item.ms, flexBasis: 0, minWidth: 2, background: item.color ?? "var(--rule-strong)" }}
+            style={{ flexGrow: item.ms, flexBasis: 0, minWidth: 2, background: item.color ?? "var(--pen)" }}
           />
         ))}
       </div>
       <ul className="mt-3 space-y-1.5">
         {items.map((item) => (
           <li key={`${item.id}-${item.name}`} className="flex items-center gap-2 text-[13px]">
-            <ColorSwatch color={item.color} />
+            <ColorSwatch color={item.color ?? "var(--pen)"} />
             <span className="min-w-0 flex-1 truncate">{item.name}</span>
             <span className="text-ink-3">{Math.round(item.share * 100)}%</span>
             <span className="w-16 text-right text-ink-2">{formatDuration(item.ms)}</span>

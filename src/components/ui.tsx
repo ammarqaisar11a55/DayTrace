@@ -48,13 +48,14 @@ export function IconButton({
 }
 
 const FIELD_CLASS =
-  "h-8 w-full rounded-md border border-rule-strong bg-sheet px-2.5 text-[13px] text-ink placeholder:text-ink-3 disabled:opacity-50";
+  "h-8 rounded-md border border-rule-strong bg-sheet px-2.5 text-[13px] text-ink placeholder:text-ink-3 disabled:opacity-50";
 
-export function Input({ className = "", ...props }: InputHTMLAttributes<HTMLInputElement>) {
+/** Fields fill their container unless the caller gives them a width. */
+export function Input({ className = "w-full", ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${FIELD_CLASS} ${className}`} />;
 }
 
-export function Select({ className = "", ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
+export function Select({ className = "w-full", ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} className={`${FIELD_CLASS} ${className}`} />;
 }
 
