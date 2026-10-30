@@ -136,8 +136,8 @@ granted by a standard interface. Classic confinement needs Snap Store approval.
 
 Decision: ship strict confinement with `x11`, `wayland`, `desktop` and `login-session-observe`,
 detect failures at runtime, and show the real capability state in Settings. The packaged Snap
-cannot be built here (no LXD or Multipass), so CI builds it and installation must be verified
-manually.
+cannot be built here (no LXD or Multipass), so GitHub Actions builds it from `snap/snapcraft.yaml`
+and installation must be verified manually.
 
 ## 6. Verification available on the development machine
 

@@ -1,0 +1,93 @@
+name: daytrace
+title: DayTrace
+license: MIT
+base: core24
+# The version is taken from package.json by the build below.
+adopt-info: daytrace
+summary: Privacy-first desktop activity tracking
+description: |
+  DayTrace records how you spend time on your computer, without timers. All
+  data stays on your computer, with no account, cloud service or telemetry.
+
+  Strict confinement limits what a tracker can see. On GNOME and most Wayland
+  desktops this package cannot name the focused application, and Settings shows
+  exactly what works. Manual timers and all reports still work. For full
+  tracking, use the .deb, .rpm or AppImage packages from GitHub Releases.
+
+  To let DayTrace notice idle time and screen locks, run:
+  sudo snap connect daytrace:login-session-observe
+
+grade: stable
+confinement: strict
+compression: lzo
+
+platforms:
+  amd64:
+
+apps:
+  daytrace:
+    command: usr/bin/daytrace
+    desktop: usr/share/applications/daytrace.desktop
+    autostart: DayTrace.desktop
+    extensions: [gnome]
+    plugs:
+      # Exports and backups go wherever the user chooses.
+      - home
+      # Update notices only. Activity data never leaves the computer.
+      - network
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - opengl
+      - browser-support
+      # Idle, lock and sleep state. Not connected automatically.
+      - login-session-observe
+
+parts:
+  daytrace:
+    plugin: nil
+    source: .
+    build-snaps:
+      # Ubuntu 24.04 ships Node 18, which is older than Vite needs.
+      - node/22/stable
+    build-packages:
+      - build-essential
+      - curl
+      - file
+      - libayatana-appindicator3-dev
+      - librsvg2-dev
+      - libssl-dev
+      - libwebkit2gtk-4.1-dev
+      - libxdo-dev
+      - pkg-config
+      - wget
+    stage-packages:
+      - libayatana-appindicator3-1
+      - libwebkit2gtk-4.1-0
+    override-pull: |
+      craftctl default
+      craftctl set version="$(node -p "require('./package.json').version")"
+    override-build: |
+      set -eu
+      # Rust comes from rustup's installer rather than the rustup snap, which
+      # links against a newer glibc than the GNOME SDK provides here.
+      export RUSTUP_HOME="${CRAFT_PART_BUILD}/.rustup"
+      export CARGO_HOME="${CRAFT_PART_BUILD}/.cargo"
+      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+        | sh -s -- -y --profile minimal --default-toolchain stable --no-modify-path
+      export PATH="${CARGO_HOME}/bin:${PATH}"
+      rustc --version
+      npm ci
+      # snapd updates the snap itself, so the build skips the updater's signed
+      # artifacts, and the release signing key never enters this container.
+      npm run tauri build -- --bundles deb --config '{"bundle":{"createUpdaterArtifacts":false}}'
+      dpkg -x target/release/bundle/deb/*.deb "${CRAFT_PART_INSTALL}"
+      # Inside the snap the icon is addressed by path rather than theme name.
+      # TryExec goes because the command is not on the host's PATH, and desktops
+      # would hide the entry from their menus.
+      apps="${CRAFT_PART_INSTALL}/usr/share/applications"
+      mv "${apps}/DayTrace.desktop" "${apps}/daytrace.desktop"
+      sed -i -e 's|^Icon=daytrace$|Icon=/usr/share/icons/hicolor/128x128/apps/daytrace.png|' \
+        -e '/^TryExec=/d' \
+        "${apps}/daytrace.desktop"

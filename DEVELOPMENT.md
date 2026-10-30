@@ -23,6 +23,7 @@ npm run tauri dev
 | `src-tauri` | Tauri commands, tray, windows and updater |
 | `src` | React interface |
 | `extensions/gnome-shell` | The Shell extension, embedded in the binary |
+| `snap` | Snap packaging, built by `.github/workflows/snap.yml` |
 | `tests` | End-to-end and platform tests |
 
 `crates/daytrace-core` builds and tests without GTK or WebKit, so most work needs no desktop libraries.

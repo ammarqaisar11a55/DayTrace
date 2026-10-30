@@ -99,6 +99,15 @@ pub fn remove_extension() -> Result<()> {
     Ok(())
 }
 
+/// Snap confinement blocks the Shell's D-Bus API and the extensions folder, so
+/// the integration can be neither reached nor installed from inside a snap.
+fn is_confined() -> bool {
+    std::env::var_os("SNAP").is_some()
+}
+
+const CONFINED: &str =
+    "Snap confinement prevents this. Use the .deb, .rpm or AppImage package for application tracking.";
+
 fn watch_focus(connection: Connection, sink: EventSink) -> zbus::Result<()> {
     let rule = MatchRule::builder()
         .msg_type(zbus::message::Type::Signal)
@@ -143,6 +152,16 @@ impl GnomeFocus {
     fn is_active(&self) -> bool {
         self.query(false).is_some()
     }
+
+    fn needs_integration(&self) -> Capability {
+        if self.is_active() {
+            Capability::available()
+        } else if is_confined() {
+            Capability::unavailable(CONFINED)
+        } else {
+            Capability::unavailable("Needs the DayTrace Shell integration.")
+        }
+    }
 }
 
 impl FocusSource for GnomeFocus {
@@ -177,6 +196,8 @@ impl FocusSource for GnomeFocus {
     fn capability(&mut self) -> Capability {
         if self.is_active() {
             Capability::available()
+        } else if is_confined() {
+            Capability::unavailable(CONFINED)
         } else {
             Capability::unavailable(
                 "GNOME does not let applications see the focused window. Install the DayTrace Shell integration to enable it.",
@@ -185,24 +206,19 @@ impl FocusSource for GnomeFocus {
     }
 
     fn executable_path(&self) -> Capability {
-        if self.is_active() {
-            Capability::available()
-        } else {
-            Capability::unavailable("Needs the DayTrace Shell integration.")
-        }
+        self.needs_integration()
     }
 
     fn window_title(&self) -> Capability {
-        if self.is_active() {
-            Capability::available()
-        } else {
-            Capability::unavailable("Needs the DayTrace Shell integration.")
-        }
+        self.needs_integration()
     }
 
     fn integration(&mut self) -> Option<IntegrationState> {
         if self.is_active() {
             return Some(IntegrationState::Active);
+        }
+        if is_confined() {
+            return None;
         }
         let installed =
             extension_directory().is_some_and(|directory| directory.join("metadata.json").exists());

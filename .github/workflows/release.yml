@@ -83,16 +83,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch the Debian package from the draft release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          mkdir -p packaging/input
-          gh release download "$GITHUB_REF_NAME" --pattern '*_amd64.deb' --dir packaging/input
       - uses: snapcore/action-build@v1
         id: snap
-        with:
-          path: packaging
       - name: Attach the snap to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
