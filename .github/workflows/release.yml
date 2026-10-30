@@ -11,6 +11,7 @@ permissions:
 
 env:
   PRERELEASE: ${{ contains(github.ref_name, '-') }}
+  SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
 
 jobs:
   verify:
@@ -61,7 +62,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
-            libgtk-3-dev patchelf
+            libgtk-3-dev libssl-dev libxdo-dev patchelf file
       - run: npm ci
       - uses: tauri-apps/tauri-action@v0
         env:
@@ -89,11 +90,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload "$GITHUB_REF_NAME" "${{ steps.snap.outputs.snap }}"
+      # Without a store token the snap is still attached to the release above.
       - name: Publish to the Snap Store
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-          CHANNEL: ${{ env.PRERELEASE == 'true' && 'beta' || 'stable' }}
         if: env.SNAPCRAFT_STORE_CREDENTIALS != ''
+        env:
+          CHANNEL: ${{ env.PRERELEASE == 'true' && 'beta' || 'stable' }}
         run: |
           sudo snap install snapcraft --classic
           snapcraft upload --release="$CHANNEL" "${{ steps.snap.outputs.snap }}"

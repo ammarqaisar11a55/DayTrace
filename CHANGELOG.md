@@ -6,6 +6,10 @@ All notable changes are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-31
+
+First public test release. See docs/VERIFICATION.md for what has and has not been tested.
+
 ### Added
 
 - Automatic tracking on Windows, X11, GNOME on Wayland, KDE Plasma and wlroots compositors
