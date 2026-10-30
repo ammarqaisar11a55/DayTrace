@@ -444,7 +444,6 @@ impl Runtime {
             display_name: None,
             executable_path: app.executable_path.as_deref(),
             window_title: app.window_title.as_deref(),
-            domain: None,
         };
         let classification = self.classifier.classify(Some(application_id), &subject);
         if self.exclusions.excludes_project(classification.project_id) {

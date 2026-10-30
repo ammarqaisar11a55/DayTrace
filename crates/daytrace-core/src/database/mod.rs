@@ -120,7 +120,7 @@ impl Database {
     }
 
     pub fn integrity_ok(&self) -> Result<bool> {
-        self.read(|connection| check_integrity(connection))
+        self.read(check_integrity)
     }
 }
 

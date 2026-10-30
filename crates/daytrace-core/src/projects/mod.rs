@@ -17,7 +17,6 @@ pub enum ConditionField {
     Application,
     ExecutablePath,
     WindowTitle,
-    Domain,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -84,7 +83,6 @@ pub struct Subject<'a> {
     pub display_name: Option<&'a str>,
     pub executable_path: Option<&'a str>,
     pub window_title: Option<&'a str>,
-    pub domain: Option<&'a str>,
 }
 
 fn text_matches(operator: ConditionOperator, text: &str, expected: &str) -> bool {
@@ -110,7 +108,6 @@ impl Condition {
             }
             ConditionField::ExecutablePath => check(subject.executable_path),
             ConditionField::WindowTitle => check(subject.window_title),
-            ConditionField::Domain => check(subject.domain),
         }
     }
 }

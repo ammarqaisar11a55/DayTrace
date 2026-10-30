@@ -94,7 +94,6 @@ fn classify_all(
             display_name: application.display_name.as_deref(),
             executable_path: application.executable_path.as_deref(),
             window_title: candidate.window_title.as_deref(),
-            domain: None,
         };
         // Rules add or change an assignment. When nothing applies to a session
         // it keeps what it has, so one new rule cannot erase earlier work.

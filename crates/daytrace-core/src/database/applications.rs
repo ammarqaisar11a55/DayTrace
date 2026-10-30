@@ -77,7 +77,7 @@ pub fn list_usage(connection: &Connection, from: i64, to: i64) -> Result<Vec<App
         "SELECT {columns},
             COALESCE(SUM(MIN(s.end_time, ?2) - MAX(s.start_time, ?1)), 0),
             COUNT(s.id),
-            (SELECT MAX(end_time) FROM activity_sessions WHERE application_id = a.id)
+            (SELECT MAX(start_time) FROM activity_sessions WHERE application_id = a.id)
          FROM applications a
          LEFT JOIN activity_sessions s
             ON s.application_id = a.id AND s.end_time > ?1 AND s.start_time < ?2
@@ -164,6 +164,6 @@ mod tests {
         let usage = db.read(|c| list_usage(c, 1_000, 2_000)).unwrap();
         assert_eq!(usage[0].total_ms, 700);
         assert_eq!(usage[0].session_count, 2);
-        assert_eq!(usage[0].last_used, Some(2_500));
+        assert_eq!(usage[0].last_used, Some(1_800));
     }
 }

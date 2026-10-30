@@ -144,9 +144,10 @@ impl Dispatch<toplevel_handle::ZwlrForeignToplevelHandleV1, ()> for State {
             }
             toplevel_handle::Event::State { state: states } => {
                 let activated = states
-                    .chunks_exact(4)
-                    .map(|bytes| u32::from_ne_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]))
-                    .any(|value| value == toplevel_handle::State::Activated as u32);
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .any(|bytes| u32::from_ne_bytes(*bytes) == toplevel_handle::State::Activated as u32);
                 state.toplevels.entry(id).or_default().activated = activated;
             }
             toplevel_handle::Event::Done => state.publish(),

@@ -40,7 +40,6 @@ const FIELDS: { value: ConditionField; label: string }[] = [
   { value: "application", label: "Application" },
   { value: "executablePath", label: "Program path" },
   { value: "windowTitle", label: "Window title" },
-  { value: "domain", label: "Website domain" },
 ];
 
 const OPERATORS: { value: ConditionOperator; label: string }[] = [
@@ -302,7 +301,6 @@ function RuleDialog({
   };
 
   const usesTitle = conditions.some((condition) => condition.field === "windowTitle");
-  const usesDomain = conditions.some((condition) => condition.field === "domain");
 
   return (
     <Dialog title={rule ? "Edit rule" : "New rule"} open={open} onClose={onClose} wide>
@@ -334,11 +332,6 @@ function RuleDialog({
           {usesTitle && !settings.collectWindowTitles && (
             <p className="mt-1 text-xs text-warn">
               Window titles are not being collected, so this condition will not match. You can turn them on in Settings.
-            </p>
-          )}
-          {usesDomain && (
-            <p className="mt-1 text-xs text-warn">
-              Website domains are only known when the optional browser integration is connected.
             </p>
           )}
         </div>
