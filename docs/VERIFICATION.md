@@ -24,7 +24,7 @@ compiles. Last updated 2026-10-31.
 | Windows core logic | 110 tests pass on `windows-latest` in CI, including live Win32 calls for process inspection and idle time |
 | CI on Ubuntu 24.04 | Clippy, the X11 test and all 23 end-to-end checks pass on GitHub Actions |
 | Release workflow | v0.1.0 built and published every package. Both update manifests are served with all six platform entries, and the published `.deb` and Windows installer verify against the shipped key |
-| Snap build and Store listing | Builds on GitHub Actions, and revision 1 is on the Store's edge channel. Its metadata, launcher and binary were inspected. It has not been installed |
+| Snap from the Store | Revision 1 installed from the edge channel on Ubuntu 26.04 with GNOME 50. It launched, and recorded active time as unidentified, as designed under strict confinement |
 
 ## Compiled only, not run
 
@@ -40,7 +40,7 @@ compiles. Last updated 2026-10-31.
 | --- | --- |
 | Windows installation, foreground tracking, updates, lock, suspend, startup | Needs a real Windows 10 and 11 desktop |
 | Installing `.deb` and `.rpm`, tray behaviour | Needs root, and a real desktop session for the tray |
-| Snap install and behaviour | Needs root to install. Whether it launches under strict confinement has not been seen |
+| Snap beyond first launch | Only the first launch on one machine has been seen. Autostart, tray and exports inside confinement are untested |
 | Applying an update end to end | Needs a second published release to update to. Only signature checks and version rules are tested |
 | Real suspend, resume and screen lock | Handled by tests in simulated time only; real `logind` signals were not triggered |
 | Fedora, Debian, Linux Mint | Not tested. Only Ubuntu 26.04 was available |
