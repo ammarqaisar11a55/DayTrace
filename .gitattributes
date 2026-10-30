@@ -1,0 +1,8 @@
+* text=auto eol=lf
+
+# Signed test data must stay byte-identical on every platform.
+tests/fixtures/** -text
+
+*.png binary
+*.ico binary
+*.icns binary
