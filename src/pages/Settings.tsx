@@ -260,7 +260,7 @@ function DataSettings() {
       <ConfirmDialog
         open={confirmingDelete}
         title="Delete all activity history?"
-        body="Every recorded session is removed from this computer. Your categories and rules stay. This cannot be undone."
+        body="Every recorded session is removed from this computer, including the copy kept after restoring a backup. Backups you saved yourself are not affected. Your categories and rules stay. This cannot be undone."
         action="Delete all history"
         onConfirm={() => void removeAll()}
         onClose={() => setConfirmingDelete(false)}

@@ -8,6 +8,7 @@ pub mod settings;
 pub mod transfer;
 
 use std::fs;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard};
 use std::time::Duration;
@@ -103,10 +104,8 @@ impl Database {
         let source = Connection::open_with_flags(source_path, OpenFlags::SQLITE_OPEN_READ_ONLY)?;
         validate_backup(&source)?;
 
-        let safety_copy = self.path.with_extension("before-restore.db");
-        if safety_copy.exists() {
-            fs::remove_file(&safety_copy)?;
-        }
+        self.remove_safety_copy()?;
+        let safety_copy = self.safety_copy_path();
         self.backup_to(&safety_copy)?;
 
         let mut writer = lock(&self.writer);
@@ -116,6 +115,58 @@ impl Database {
         writer.execute_batch("PRAGMA foreign_keys = ON;")?;
         migrations::run(&mut writer)?;
         Ok(safety_copy)
+    }
+
+    /// Deletes every session, and the copy a restore left beside the database,
+    /// which would otherwise keep that history readable on disk.
+    pub fn delete_all_history(&self) -> Result<usize> {
+        let count = self.write(sessions::delete_all)?;
+        self.remove_safety_copy()?;
+        Ok(count)
+    }
+
+    /// Deletes sessions that ended before the cutoff, here and in the copy a
+    /// restore left behind. The copy stays usable for undoing the restore.
+    pub fn apply_retention(&self, cutoff: i64) -> Result<usize> {
+        let count = self.write(|connection| sessions::delete_before(connection, cutoff))?;
+        self.expire_safety_copy(cutoff)?;
+        Ok(count)
+    }
+
+    fn safety_copy_path(&self) -> PathBuf {
+        self.path.with_extension("before-restore.db")
+    }
+
+    fn remove_safety_copy(&self) -> Result<()> {
+        for suffix in ["", "-wal", "-shm"] {
+            let mut path = self.safety_copy_path().into_os_string();
+            path.push(suffix);
+            match fs::remove_file(path) {
+                Err(error) if error.kind() != ErrorKind::NotFound => return Err(error.into()),
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    /// A copy that cannot be trimmed is removed: losing the undo is better than
+    /// keeping data the user asked to expire.
+    fn expire_safety_copy(&self, cutoff: i64) -> Result<()> {
+        let path = self.safety_copy_path();
+        if !path.exists() {
+            return Ok(());
+        }
+        let trim = || -> Result<()> {
+            let copy = Connection::open(&path)?;
+            if sessions::delete_before(&copy, cutoff)? > 0 {
+                copy.execute_batch("VACUUM;")?;
+            }
+            Ok(())
+        };
+        if trim().is_err() {
+            self.remove_safety_copy()?;
+        }
+        Ok(())
     }
 
     pub fn integrity_ok(&self) -> Result<bool> {
@@ -315,6 +366,76 @@ mod tests {
             [],
         );
         Ok(refused.is_err())
+    }
+
+    /// A database holding the two sessions, after a restore that left a safety
+    /// copy of the same two sessions.
+    fn restored_database(first: i64, second: i64) -> (tempfile::TempDir, Database, PathBuf) {
+        let (dir, db) = database();
+        add_session(&db, first);
+        add_session(&db, second);
+        let backup = dir.path().join("backup.db");
+        db.backup_to(&backup).unwrap();
+        let safety = db.restore_from(&backup).unwrap();
+        (dir, db, safety)
+    }
+
+    fn sessions_in(path: &Path) -> i64 {
+        Connection::open(path)
+            .unwrap()
+            .query_row("SELECT COUNT(*) FROM activity_sessions", [], |row| row.get(0))
+            .unwrap()
+    }
+
+    #[test]
+    fn deleting_all_history_also_removes_the_safety_copy() {
+        let (_dir, db, safety) = restored_database(1_000, 5_000);
+        assert_eq!(sessions_in(&safety), 2);
+        let wal = safety.with_extension("db-wal");
+        fs::write(&wal, "leftover").unwrap();
+
+        assert_eq!(db.delete_all_history().unwrap(), 2);
+
+        assert_eq!(count(&db), 0);
+        assert!(!safety.exists(), "the old history must not stay on disk");
+        assert!(!wal.exists());
+    }
+
+    #[test]
+    fn deleting_all_history_works_without_a_safety_copy() {
+        let (_dir, db) = database();
+        add_session(&db, 1_000);
+        assert_eq!(db.delete_all_history().unwrap(), 1);
+    }
+
+    #[test]
+    fn retention_reaches_the_safety_copy_and_keeps_it_usable() {
+        let (_dir, db, safety) = restored_database(1_000, 9_000);
+
+        assert_eq!(db.apply_retention(5_000).unwrap(), 1);
+
+        assert_eq!(count(&db), 1);
+        assert_eq!(sessions_in(&safety), 1, "the expired session must leave the copy too");
+        assert!(db.restore_from(&safety).is_ok(), "the copy can still undo the restore");
+    }
+
+    #[test]
+    fn retention_trims_the_copy_even_when_the_live_database_has_nothing_to_expire() {
+        let (_dir, db, safety) = restored_database(1_000, 9_000);
+        db.write(|c| sessions::delete_before(c, 5_000)).unwrap();
+
+        assert_eq!(db.apply_retention(5_000).unwrap(), 0);
+        assert_eq!(sessions_in(&safety), 1);
+    }
+
+    #[test]
+    fn a_safety_copy_that_cannot_be_trimmed_is_removed() {
+        let (_dir, db, safety) = restored_database(1_000, 9_000);
+        fs::write(&safety, "this is not a database").unwrap();
+
+        db.apply_retention(5_000).unwrap();
+
+        assert!(!safety.exists());
     }
 
     #[cfg(unix)]

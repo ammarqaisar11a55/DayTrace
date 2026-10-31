@@ -5,7 +5,7 @@ mod tray;
 use std::thread;
 use std::time::Duration;
 
-use daytrace_core::database::{sessions, settings};
+use daytrace_core::database::settings;
 use daytrace_core::time::{now_ms, HOUR_MS};
 use log::{info, warn};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
@@ -55,7 +55,7 @@ fn apply_retention(app: &AppHandle) {
         return;
     }
     let cutoff = now_ms() - stored.retention_days as i64 * 24 * HOUR_MS;
-    match state.database.write(|connection| sessions::delete_before(connection, cutoff)) {
+    match state.database.apply_retention(cutoff) {
         Ok(0) => {}
         Ok(count) => {
             info!("retention removed {count} sessions");

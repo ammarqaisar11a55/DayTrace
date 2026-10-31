@@ -3,7 +3,7 @@ use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 
 use chrono::Local;
-use daytrace_core::database::{exclusions, sessions, transfer};
+use daytrace_core::database::{exclusions, transfer};
 use daytrace_core::models::{Exclusion, ExclusionKind};
 use daytrace_core::tracker::runtime::Message;
 use tauri::{AppHandle, State};
@@ -100,7 +100,7 @@ pub fn restore_database(app: AppHandle, state: State<'_, AppState>) -> CommandRe
 #[tauri::command(async)]
 pub fn delete_all_activity(app: AppHandle, state: State<'_, AppState>) -> CommandResult<usize> {
     state.with_tracker(|tracker| tracker.flush());
-    let count = state.database.write(sessions::delete_all).map_err(to_message)?;
+    let count = state.database.delete_all_history().map_err(to_message)?;
     state.with_tracker(|tracker| tracker.data_replaced());
     notify_data_changed(&app);
     Ok(count)

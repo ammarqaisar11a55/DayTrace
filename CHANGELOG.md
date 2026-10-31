@@ -17,6 +17,10 @@ All notable changes are recorded here. The format follows
 - Classification rules moved to the Categories page and now always assign a category
 - Preview last 30 days also works with no rules, so application defaults can be applied to history
 
+### Fixed
+
+- Delete all history now removes the copy kept after a restore, and history limits apply to that copy
+
 ## [0.1.0] - 2026-10-31
 
 First public test release. See docs/VERIFICATION.md for what has and has not been tested.

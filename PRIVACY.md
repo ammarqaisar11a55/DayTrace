@@ -35,6 +35,11 @@ messages, and browser history.
 On Linux the database is readable only by your user. The database is not encrypted, so anyone with
 access to your user account can read it. Backups you create are not encrypted either.
 
+Restoring a backup keeps your previous data beside the database as
+`daytrace.before-restore.db`, so that you can undo it. **Delete all history** removes this copy, and
+history limits apply to it as well. Backups you saved yourself are yours to manage, and DayTrace
+does not change them.
+
 Application logs are stored in the standard log directory for your system.
 
 ## Network use
