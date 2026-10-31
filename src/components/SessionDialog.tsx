@@ -2,27 +2,14 @@ import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
 import { useApp } from "../stores/app";
-import type { Category, Project, Session } from "../types";
+import type { Category, Session } from "../types";
 import { formatDuration, fromLocalInput, sessionTitle, toLocalInput } from "../utils/format";
 import { Button, ConfirmDialog, Dialog, Field, Input, Select } from "./ui";
 
-export function ProjectOptions({ projects }: { projects: Project[] }) {
+export function CategoryOptions({ categories, empty = "No category" }: { categories: Category[]; empty?: string }) {
   return (
     <>
-      <option value="">No project</option>
-      {projects.map((project) => (
-        <option key={project.id} value={project.id}>
-          {project.name}
-        </option>
-      ))}
-    </>
-  );
-}
-
-export function CategoryOptions({ categories }: { categories: Category[] }) {
-  return (
-    <>
-      <option value="">No category</option>
+      <option value="">{empty}</option>
       {categories.map((category) => (
         <option key={category.id} value={category.id}>
           {category.name}
@@ -37,19 +24,16 @@ const numberOrNull = (value: string) => (value === "" ? null : Number(value));
 /** Inspect and correct one recorded session. */
 export function SessionDialog({
   session,
-  projects,
   categories,
   onClose,
   onChanged,
 }: {
   session: Session | null;
-  projects: Project[];
   categories: Category[];
   onClose: () => void;
   onChanged: () => void;
 }) {
   const { attempt, notify } = useApp();
-  const [projectId, setProjectId] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [label, setLabel] = useState("");
   const [start, setStart] = useState("");
@@ -58,7 +42,6 @@ export function SessionDialog({
 
   useEffect(() => {
     if (!session) return;
-    setProjectId(session.projectId?.toString() ?? "");
     setCategoryId(session.categoryId?.toString() ?? "");
     setLabel(session.label ?? "");
     setStart(toLocalInput(session.startTime));
@@ -72,7 +55,6 @@ export function SessionDialog({
   const save = async () => {
     const saved = await attempt(() =>
       api.updateSession(session.id, {
-        projectId: numberOrNull(projectId),
         categoryId: numberOrNull(categoryId),
         label: label || null,
         ...(timesChanged ? { startTime: fromLocalInput(start), endTime: fromLocalInput(end) } : {}),
@@ -117,16 +99,13 @@ export function SessionDialog({
           </dl>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Project">
-            <Select value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-              <ProjectOptions projects={projects} />
-            </Select>
-          </Field>
-          <Field label="Category">
-            <Select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
-              <CategoryOptions categories={categories} />
-            </Select>
-          </Field>
+          <div className="col-span-2">
+            <Field label="Category">
+              <Select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
+                <CategoryOptions categories={categories} />
+              </Select>
+            </Field>
+          </div>
           <div className="col-span-2">
             <Field label="Label">
               <Input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="What was this?" />

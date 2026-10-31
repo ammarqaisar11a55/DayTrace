@@ -5,12 +5,11 @@ import { Applications } from "./pages/Applications";
 import { Categories } from "./pages/Categories";
 import { Dashboard } from "./pages/Dashboard";
 import { Onboarding } from "./pages/Onboarding";
-import { Projects } from "./pages/Projects";
 import { SettingsPage } from "./pages/Settings";
 import { Timeline } from "./pages/Timeline";
 import { AppProvider, useApp } from "./stores/app";
 
-const PAGE_IDS: PageId[] = ["dashboard", "timeline", "applications", "projects", "categories", "analytics", "settings"];
+const PAGE_IDS: PageId[] = ["dashboard", "timeline", "applications", "categories", "analytics", "settings"];
 
 function pageFromHash(): PageId {
   const hash = window.location.hash.slice(1) as PageId;
@@ -34,7 +33,6 @@ function Pages() {
       {page === "dashboard" && <Dashboard />}
       {page === "timeline" && <Timeline />}
       {page === "applications" && <Applications />}
-      {page === "projects" && <Projects />}
       {page === "categories" && <Categories />}
       {page === "analytics" && <Analytics />}
       {page === "settings" && <SettingsPage />}

@@ -6,7 +6,7 @@ import { Button, ConfirmDialog, Empty, Field, IconButton, Input, PageHeader, Sec
 import { useData } from "../hooks/useData";
 import { api, errorMessage } from "../services/api";
 import { useApp } from "../stores/app";
-import type { AvailableUpdate, ExclusionKind, Project, Settings, UpdateProgress } from "../types";
+import type { AvailableUpdate, ExclusionKind, Settings, UpdateProgress } from "../types";
 import { formatDateTime } from "../utils/format";
 
 function Toggle({
@@ -149,13 +149,11 @@ function PrivacySettings() {
 const KIND_LABELS: Record<ExclusionKind, string> = {
   application: "Application",
   path: "Program path",
-  project: "Project",
 };
 
 function Exclusions() {
   const { attempt } = useApp();
   const exclusions = useData(() => api.listExclusions(), []);
-  const { data: projects = [] } = useData<Project[]>(() => api.listProjects(false), []);
   const [kind, setKind] = useState<ExclusionKind>("application");
   const [value, setValue] = useState("");
 
@@ -165,11 +163,6 @@ function Exclusions() {
       setValue("");
       exclusions.reload();
     });
-
-  const describe = (exclusionKind: ExclusionKind, stored: string) =>
-    exclusionKind === "project"
-      ? (projects.find((project) => String(project.id) === stored)?.name ?? "Deleted project")
-      : stored;
 
   return (
     <Section title="Never record">
@@ -192,23 +185,12 @@ function Exclusions() {
             </option>
           ))}
         </Select>
-        {kind === "project" ? (
-          <Select aria-label="Project" value={value} onChange={(event) => setValue(event.target.value)}>
-            <option value="">Choose a project</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </Select>
-        ) : (
-          <Input
-            aria-label="Value"
-            value={value}
-            placeholder={kind === "path" ? "/home/me/private" : "KeePassXC"}
-            onChange={(event) => setValue(event.target.value)}
-          />
-        )}
+        <Input
+          aria-label="Value"
+          value={value}
+          placeholder={kind === "path" ? "/home/me/private" : "KeePassXC"}
+          onChange={(event) => setValue(event.target.value)}
+        />
         <Button disabled={!value.trim()} onClick={() => void add()}>
           Add
         </Button>
@@ -218,7 +200,7 @@ function Exclusions() {
         {(exclusions.data ?? []).map((exclusion) => (
           <li key={exclusion.id} className="flex items-center gap-3 border-t border-rule py-1 text-[13px]">
             <span className="w-24 shrink-0 text-xs text-ink-3">{KIND_LABELS[exclusion.kind]}</span>
-            <span className="selectable min-w-0 flex-1 truncate">{describe(exclusion.kind, exclusion.value)}</span>
+            <span className="selectable min-w-0 flex-1 truncate">{exclusion.value}</span>
             <IconButton
               label={`Stop excluding ${exclusion.value}`}
               onClick={() =>
@@ -278,7 +260,7 @@ function DataSettings() {
       <ConfirmDialog
         open={confirmingDelete}
         title="Delete all activity history?"
-        body="Every recorded session is removed from this computer. Your projects, categories and rules stay. This cannot be undone."
+        body="Every recorded session is removed from this computer. Your categories and rules stay. This cannot be undone."
         action="Delete all history"
         onConfirm={() => void removeAll()}
         onClose={() => setConfirmingDelete(false)}

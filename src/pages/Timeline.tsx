@@ -2,12 +2,12 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { AppIcon } from "../components/AppIcon";
 import { DayRibbon } from "../components/DayRibbon";
-import { CategoryOptions, ProjectOptions, SessionDialog } from "../components/SessionDialog";
+import { CategoryOptions, SessionDialog } from "../components/SessionDialog";
 import { Button, Dialog, Empty, ErrorNote, Field, IconButton, Input, PageHeader, Select } from "../components/ui";
 import { useData } from "../hooks/useData";
 import { api } from "../services/api";
 import { useApp } from "../stores/app";
-import type { Category, Project, Session } from "../types";
+import type { Category, Session } from "../types";
 import {
   addDays,
   formatClock,
@@ -24,14 +24,12 @@ import {
 function AddEntryDialog({
   open,
   day,
-  projects,
   categories,
   onClose,
   onAdded,
 }: {
   open: boolean;
   day: string;
-  projects: Project[];
   categories: Category[];
   onClose: () => void;
   onAdded: () => void;
@@ -41,7 +39,6 @@ function AddEntryDialog({
   const [start, setStart] = useState(toLocalInput(noon));
   const [end, setEnd] = useState(toLocalInput(noon + 1_800_000));
   const [label, setLabel] = useState("");
-  const [projectId, setProjectId] = useState("");
   const [categoryId, setCategoryId] = useState("");
 
   const add = async () => {
@@ -50,7 +47,6 @@ function AddEntryDialog({
         startTime: fromLocalInput(start),
         endTime: fromLocalInput(end),
         label: label.trim() || null,
-        projectId: projectId ? Number(projectId) : null,
         categoryId: categoryId ? Number(categoryId) : null,
       }),
     );
@@ -75,16 +71,13 @@ function AddEntryDialog({
         <Field label="Ended">
           <Input type="datetime-local" value={end} onChange={(event) => setEnd(event.target.value)} />
         </Field>
-        <Field label="Project">
-          <Select value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-            <ProjectOptions projects={projects} />
-          </Select>
-        </Field>
-        <Field label="Category">
-          <Select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
-            <CategoryOptions categories={categories} />
-          </Select>
-        </Field>
+        <div className="col-span-2">
+          <Field label="Category">
+            <Select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
+              <CategoryOptions categories={categories} />
+            </Select>
+          </Field>
+        </div>
       </div>
       <div className="mt-5 flex justify-end gap-2">
         <Button onClick={onClose}>Cancel</Button>
@@ -129,9 +122,9 @@ function GroupRow({ group, onSelect }: { group: SessionGroup; onSelect: (session
         )}
         <span className="min-w-0 flex-1">
           <span className={`block truncate text-[13px] ${away ? "text-ink-3" : ""}`}>{group.title}</span>
-          {(first.categoryName || first.projectName || first.label) && (
+          {(first.categoryName || first.label) && (
             <span className="block truncate text-xs text-ink-3">
-              {[first.sessionType === "manual" ? null : first.label, first.categoryName, first.projectName]
+              {[first.sessionType === "manual" ? null : first.label, first.categoryName]
                 .filter(Boolean)
                 .join(", ")}
             </span>
@@ -166,7 +159,6 @@ export function Timeline() {
   const today = toDateKey(new Date());
   const [day, setDay] = useState(today);
   const [applicationId, setApplicationId] = useState("");
-  const [projectId, setProjectId] = useState("");
   const [selected, setSelected] = useState<Session | null>(null);
   const [adding, setAdding] = useState(false);
 
@@ -176,12 +168,10 @@ export function Timeline() {
       api.listSessions({
         ...range,
         applicationId: applicationId ? Number(applicationId) : null,
-        projectId: projectId ? Number(projectId) : null,
       }),
-    [range, applicationId, projectId],
+    [range, applicationId],
   );
   const { data: applications = [] } = useData(() => api.listApplications(), []);
-  const { data: projects = [] } = useData(() => api.listProjects(false), []);
   const { data: categories = [] } = useData(() => api.listCategories(), []);
 
   const groups = useMemo(() => groupConsecutive(sessions.data ?? []), [sessions.data]);
@@ -229,19 +219,6 @@ export function Timeline() {
             </option>
           ))}
         </Select>
-        <Select
-          aria-label="Filter by project"
-          className="w-48"
-          value={projectId}
-          onChange={(event) => setProjectId(event.target.value)}
-        >
-          <option value="">All projects</option>
-          {projects.map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.name}
-            </option>
-          ))}
-        </Select>
       </div>
 
       {sessions.error && <ErrorNote message={sessions.error} />}
@@ -256,7 +233,6 @@ export function Timeline() {
 
       <SessionDialog
         session={selected}
-        projects={projects}
         categories={categories}
         onClose={() => setSelected(null)}
         onChanged={sessions.reload}
@@ -264,7 +240,6 @@ export function Timeline() {
       <AddEntryDialog
         open={adding}
         day={day}
-        projects={projects}
         categories={categories}
         onClose={() => setAdding(false)}
         onAdded={sessions.reload}

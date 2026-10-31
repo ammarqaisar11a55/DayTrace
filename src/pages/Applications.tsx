@@ -1,37 +1,33 @@
 import { useEffect, useState } from "react";
 import { AppIcon } from "../components/AppIcon";
 import { DateRangePicker, useRangeSelection } from "../components/DateRangePicker";
-import { CategoryOptions, ProjectOptions } from "../components/SessionDialog";
+import { CategoryOptions } from "../components/SessionDialog";
 import { Button, ConfirmDialog, Dialog, Empty, ErrorNote, Field, Input, PageHeader, Select } from "../components/ui";
 import { useData } from "../hooks/useData";
 import { api } from "../services/api";
 import { useApp } from "../stores/app";
-import type { ApplicationUsage, Category, Project } from "../types";
+import type { ApplicationUsage, Category } from "../types";
 import { formatDuration } from "../utils/format";
 
 function EditDialog({
   application,
-  projects,
   categories,
   onClose,
   onChanged,
 }: {
   application: ApplicationUsage | null;
-  projects: Project[];
   categories: Category[];
   onClose: () => void;
   onChanged: () => void;
 }) {
   const { attempt, notify } = useApp();
   const [displayName, setDisplayName] = useState("");
-  const [projectId, setProjectId] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (!application) return;
     setDisplayName(application.displayName ?? "");
-    setProjectId(application.defaultProjectId?.toString() ?? "");
     setCategoryId(application.defaultCategoryId?.toString() ?? "");
   }, [application]);
 
@@ -41,7 +37,6 @@ function EditDialog({
     await attempt(() =>
       api.updateApplication(application.id, {
         displayName: displayName.trim() || null,
-        defaultProjectId: projectId ? Number(projectId) : null,
         defaultCategoryId: categoryId ? Number(categoryId) : null,
       }),
     );
@@ -75,18 +70,11 @@ function EditDialog({
           <Field label="Display name">
             <Input value={displayName} placeholder={application.name} onChange={(event) => setDisplayName(event.target.value)} />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Default project" hint="Used when no rule matches.">
-              <Select value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-                <ProjectOptions projects={projects} />
-              </Select>
-            </Field>
-            <Field label="Default category" hint="Used when no rule matches.">
-              <Select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
-                <CategoryOptions categories={categories} />
-              </Select>
-            </Field>
-          </div>
+          <Field label="Default category" hint="Used when no rule matches.">
+            <Select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
+              <CategoryOptions categories={categories} />
+            </Select>
+          </Field>
         </div>
         <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
           <div className="flex gap-2">
@@ -119,12 +107,10 @@ export function Applications() {
   const [selection, setSelection] = useRangeSelection("week");
   const [editing, setEditing] = useState<ApplicationUsage | null>(null);
   const applications = useData(() => api.listApplicationUsage(selection.range), [selection.range]);
-  const { data: projects = [] } = useData(() => api.listProjects(false), []);
   const { data: categories = [] } = useData(() => api.listCategories(), []);
 
   const list = applications.data ?? [];
   const top = list[0]?.totalMs || 1;
-  const projectName = (id: number | null) => projects.find((project) => project.id === id)?.name;
   const categoryName = (id: number | null) => categories.find((category) => category.id === id)?.name;
 
   return (
@@ -139,9 +125,6 @@ export function Applications() {
       <ul className="-mx-2">
         {list.map((application) => {
           const name = application.displayName ?? application.name;
-          const defaults = [categoryName(application.defaultCategoryId), projectName(application.defaultProjectId)]
-            .filter(Boolean)
-            .join(", ");
           return (
             <li key={application.id}>
               <button
@@ -152,7 +135,7 @@ export function Applications() {
                 <AppIcon id={application.id} name={name} size={24} />
                 <span className="w-56 min-w-0 shrink-0">
                   <span className="block truncate text-[13px]">{name}</span>
-                  <span className="block truncate text-xs text-ink-3">{defaults || "No defaults"}</span>
+                  <span className="block truncate text-xs text-ink-3">{categoryName(application.defaultCategoryId) ?? "No default category"}</span>
                 </span>
                 <span className="h-1 min-w-0 flex-1 bg-rule/50">
                   <span
@@ -170,7 +153,6 @@ export function Applications() {
       </ul>
       <EditDialog
         application={editing}
-        projects={projects}
         categories={categories}
         onClose={() => setEditing(null)}
         onChanged={applications.reload}

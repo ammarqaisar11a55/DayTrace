@@ -1,7 +1,7 @@
 export type SessionType = "active" | "unknown" | "manual" | "idle" | "locked";
 export type Theme = "system" | "light" | "dark";
 export type UpdateChannel = "stable" | "beta";
-export type ExclusionKind = "application" | "path" | "project";
+export type ExclusionKind = "application" | "path";
 export type TrackingState = "disabled" | "paused" | "tracking" | "idle" | "locked" | "manual";
 export type Support = "available" | "limited" | "unavailable";
 export type IntegrationState = "notInstalled" | "pendingRestart" | "active";
@@ -60,7 +60,6 @@ export interface Application {
   displayName: string | null;
   executablePath: string | null;
   iconPath: string | null;
-  defaultProjectId: number | null;
   defaultCategoryId: number | null;
   createdAt: number;
 }
@@ -71,29 +70,10 @@ export interface ApplicationUsage extends Application {
   lastUsed: number | null;
 }
 
-export interface Project {
-  id: number;
-  parentId: number | null;
-  name: string;
-  description: string;
-  color: string;
-  status: "active" | "archived";
-  createdAt: number;
-  updatedAt: number;
-}
-
-export interface ProjectInput {
-  parentId: number | null;
-  name: string;
-  description: string;
-  color: string;
-}
-
 export interface Category {
   id: number;
   name: string;
   color: string;
-  defaultProjectId: number | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -101,7 +81,6 @@ export interface Category {
 export interface CategoryInput {
   name: string;
   color: string;
-  defaultProjectId: number | null;
 }
 
 export interface Session {
@@ -109,9 +88,6 @@ export interface Session {
   applicationId: number | null;
   applicationName: string | null;
   executablePath: string | null;
-  projectId: number | null;
-  projectName: string | null;
-  projectColor: string | null;
   categoryId: number | null;
   categoryName: string | null;
   categoryColor: string | null;
@@ -129,14 +105,12 @@ export interface SessionQuery {
   from: string;
   to: string;
   applicationId?: number | null;
-  projectId?: number | null;
   categoryId?: number | null;
   limit?: number;
   newestFirst?: boolean;
 }
 
 export interface SessionPatch {
-  projectId: number | null;
   categoryId: number | null;
   label: string | null;
   startTime?: number;
@@ -147,13 +121,11 @@ export interface ManualSessionInput {
   startTime: number;
   endTime: number;
   label: string | null;
-  projectId: number | null;
   categoryId: number | null;
 }
 
 export interface ManualTimerInput {
   label: string | null;
-  projectId: number | null;
   categoryId: number | null;
 }
 
@@ -170,8 +142,7 @@ export interface Rule {
   id: number;
   name: string;
   conditions: Condition[];
-  targetProjectId: number | null;
-  targetCategoryId: number | null;
+  targetCategoryId: number;
   priority: number;
   enabled: boolean;
 }
@@ -183,8 +154,6 @@ export interface RuleChange {
   applicationName: string;
   startTime: number;
   durationSeconds: number;
-  oldProjectId: number | null;
-  newProjectId: number | null;
   oldCategoryId: number | null;
   newCategoryId: number | null;
 }
@@ -237,7 +206,6 @@ export interface Report {
   to: string;
   totals: Totals;
   applications: RankedItem[];
-  projects: RankedItem[];
   categories: RankedItem[];
   hourly: Bucket[];
   daily: Bucket[];

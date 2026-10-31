@@ -122,7 +122,7 @@ export interface SessionGroup {
 }
 
 function groupKey(session: Session): string {
-  return [session.sessionType, session.applicationId, session.projectId, session.categoryId, session.label].join("|");
+  return [session.sessionType, session.applicationId, session.categoryId, session.label].join("|");
 }
 
 /** Joins neighbouring sessions of the same activity. Expects chronological order. */

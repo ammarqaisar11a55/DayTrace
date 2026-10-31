@@ -10,9 +10,6 @@ import type {
   ExclusionKind,
   ManualSessionInput,
   ManualTimerInput,
-  Project,
-  ProjectInput,
-  RankedItem,
   Report,
   Rule,
   RuleInput,
@@ -54,18 +51,10 @@ export const api = {
     invoke<ApplicationUsage[]>("list_application_usage", { ...range }),
   updateApplication: (
     id: number,
-    patch: { displayName: string | null; defaultProjectId: number | null; defaultCategoryId: number | null },
+    patch: { displayName: string | null; defaultCategoryId: number | null },
   ) => invoke<void>("update_application", { id, patch }),
   deleteApplication: (id: number) => invoke<void>("delete_application", { id }),
   applicationIcon: (id: number) => invoke<string | null>("application_icon", { id }),
-
-  listProjects: (includeArchived: boolean) => invoke<Project[]>("list_projects", { includeArchived }),
-  createProject: (input: ProjectInput) => invoke<Project>("create_project", { input }),
-  updateProject: (id: number, input: ProjectInput) => invoke<Project>("update_project", { id, input }),
-  archiveProject: (id: number, archived: boolean) => invoke<void>("archive_project", { id, archived }),
-  deleteProject: (id: number) => invoke<void>("delete_project", { id }),
-  projectBreakdown: (id: number, range: DateRange) =>
-    invoke<RankedItem[]>("project_breakdown", { id, ...range }),
 
   listCategories: () => invoke<Category[]>("list_categories"),
   createCategory: (input: CategoryInput) => invoke<Category>("create_category", { input }),

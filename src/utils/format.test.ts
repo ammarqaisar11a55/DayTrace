@@ -15,9 +15,6 @@ function session(overrides: Partial<Session>): Session {
     applicationId: 1,
     applicationName: "Code",
     executablePath: null,
-    projectId: null,
-    projectName: null,
-    projectColor: null,
     categoryId: null,
     categoryName: null,
     categoryColor: null,
@@ -72,7 +69,7 @@ describe("groupConsecutive", () => {
     expect(groups[0]?.totalMs).toBe(90_000);
   });
 
-  it("keeps sessions apart when an application, project or long gap separates them", () => {
+  it("keeps sessions apart when an application, category or long gap separates them", () => {
     expect(
       groupConsecutive([
         session({ id: 1 }),
@@ -84,7 +81,7 @@ describe("groupConsecutive", () => {
       groupConsecutive([session({ id: 1 }), session({ id: 2, startTime: 600_000, endTime: 660_000 })]),
     ).toHaveLength(2);
     expect(
-      groupConsecutive([session({ id: 1 }), session({ id: 2, projectId: 5, startTime: 60_000 })]),
+      groupConsecutive([session({ id: 1 }), session({ id: 2, categoryId: 5, startTime: 60_000 })]),
     ).toHaveLength(2);
   });
 });

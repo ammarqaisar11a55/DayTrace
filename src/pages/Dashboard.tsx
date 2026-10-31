@@ -65,7 +65,6 @@ export function Dashboard() {
     return api.getReport({ from: addDays(today, -6), to: today });
   }, []);
   const recent = useData(() => api.listSessions({ ...range, limit: 8, newestFirst: true }), [range]);
-  const { data: projects = [] } = useData(() => api.listProjects(false), []);
   const { data: categories = [] } = useData(() => api.listCategories(), []);
 
   const reload = () => {
@@ -118,22 +117,15 @@ export function Dashboard() {
             <Section title="Categories">
               <ShareBar items={report.data.categories} empty="No categorized activity in this period." />
             </Section>
-            <Section title="Most used applications">
-              <RankedList items={report.data.applications} empty="No applications recorded in this period." />
-            </Section>
-            <Section title="Most active projects">
-              <RankedList
-                items={report.data.projects}
-                empty="No project activity in this period."
-                useItemColor
-              />
-            </Section>
             <Section title="This week">
               {week.data && (
                 <ActivityBars buckets={week.data.daily} label={dayLabel} height={170} ariaLabel="Active and idle time over the last seven days" />
               )}
             </Section>
-            <Section title="Recent sessions">
+            <Section title="Most used applications">
+              <RankedList items={report.data.applications} empty="No applications recorded in this period." />
+            </Section>
+            <Section title="Recent sessions" className="lg:col-span-2">
               <RecentSessions sessions={recent.data ?? []} onSelect={setSelected} />
             </Section>
           </div>
@@ -142,7 +134,6 @@ export function Dashboard() {
 
       <SessionDialog
         session={selected}
-        projects={projects}
         categories={categories}
         onClose={() => setSelected(null)}
         onChanged={reload}

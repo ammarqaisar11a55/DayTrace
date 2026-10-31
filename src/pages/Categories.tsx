@@ -1,42 +1,38 @@
 import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DateRangePicker, useRangeSelection } from "../components/DateRangePicker";
-import { ProjectOptions } from "../components/SessionDialog";
-import { Button, ColorSwatch, ConfirmDialog, Dialog, ErrorNote, Field, Input, PageHeader, Select } from "../components/ui";
+import { Rules } from "../components/Rules";
+import { Button, ColorSwatch, ConfirmDialog, Dialog, ErrorNote, Field, Input, PageHeader } from "../components/ui";
 import { useData } from "../hooks/useData";
 import { api } from "../services/api";
 import { useApp } from "../stores/app";
-import type { Category, Project } from "../types";
+import type { Category } from "../types";
 import { formatDuration } from "../utils/format";
 
 function CategoryDialog({
   open,
   category,
-  projects,
   onClose,
   onChanged,
 }: {
   open: boolean;
   category: Category | null;
-  projects: Project[];
   onClose: () => void;
   onChanged: () => void;
 }) {
   const { attempt, notify } = useApp();
   const [name, setName] = useState("");
   const [color, setColor] = useState("#2a78d6");
-  const [projectId, setProjectId] = useState("");
   const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setName(category?.name ?? "");
     setColor(category?.color ?? "#2a78d6");
-    setProjectId(category?.defaultProjectId?.toString() ?? "");
   }, [open, category]);
 
   const save = async () => {
-    const input = { name, color, defaultProjectId: projectId ? Number(projectId) : null };
+    const input = { name, color };
     const saved = await attempt(() =>
       category ? api.updateCategory(category.id, input) : api.createCategory(input),
     );
@@ -73,11 +69,6 @@ function CategoryDialog({
               />
             </Field>
           </div>
-          <Field label="Project for this category" hint="Sessions in this category go here when nothing else sets a project.">
-            <Select value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-              <ProjectOptions projects={projects} />
-            </Select>
-          </Field>
         </div>
         <div className="mt-5 flex items-center justify-between">
           {category ? (
@@ -98,7 +89,7 @@ function CategoryDialog({
       <ConfirmDialog
         open={confirming}
         title={`Delete ${category?.name}?`}
-        body="Sessions keep their time and become uncategorized. Rules that only set this category are deleted too."
+        body="Sessions keep their time and become uncategorized. Rules that assign this category are deleted too."
         action="Delete category"
         onConfirm={() => void remove()}
         onClose={() => setConfirming(false)}
@@ -113,7 +104,6 @@ export function Categories() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const categories = useData(() => api.listCategories(), []);
   const report = useData(() => api.getReport(selection.range), [selection.range]);
-  const { data: projects = [] } = useData(() => api.listProjects(false), []);
 
   const usage = new Map((report.data?.categories ?? []).map((item) => [item.id, item]));
 
@@ -133,7 +123,7 @@ export function Categories() {
         </Button>
       </PageHeader>
       {categories.error && <ErrorNote message={categories.error} />}
-      <ul className="-mx-2">
+      <ul className="-mx-2 mb-8">
         {(categories.data ?? []).map((category) => {
           const item = usage.get(category.id);
           return (
@@ -148,9 +138,6 @@ export function Categories() {
               >
                 <ColorSwatch color={category.color} size={14} />
                 <span className="min-w-0 flex-1 truncate text-[13px]">{category.name}</span>
-                <span className="text-xs text-ink-3">
-                  {projects.find((project) => project.id === category.defaultProjectId)?.name}
-                </span>
                 <span className="w-12 text-right text-xs text-ink-3">
                   {item ? `${Math.round(item.share * 100)}%` : ""}
                 </span>
@@ -160,10 +147,10 @@ export function Categories() {
           );
         })}
       </ul>
+      <Rules categories={categories.data ?? []} />
       <CategoryDialog
         open={dialogOpen}
         category={editing}
-        projects={projects}
         onClose={() => setDialogOpen(false)}
         onChanged={categories.reload}
       />

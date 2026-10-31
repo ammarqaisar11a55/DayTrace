@@ -114,10 +114,7 @@ export function Analytics() {
           <Section title="Applications">
             <RankedList items={data.applications} empty="No applications recorded in this period." limit={10} />
           </Section>
-          <Section title="Projects">
-            <RankedList items={data.projects} empty="No project activity in this period." limit={10} useItemColor />
-          </Section>
-          <Section title="Categories" className="lg:col-span-2">
+          <Section title="Categories">
             <ShareBar items={data.categories} empty="No categorized activity in this period." />
           </Section>
           <Section title="When you were active" className="lg:col-span-2">

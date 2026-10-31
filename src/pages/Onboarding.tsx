@@ -31,7 +31,7 @@ const STEPS: { title: string; body: ReactNode }[] = [
     title: "See where your time went",
     body: (
       <p className="text-ink-2">
-        You get an honest record of each day: which applications you used, how your time divided between projects, and
+        You get an honest record of each day: which applications you used, how your time divided between categories, and
         how your habits change. DayTrace shows the numbers and leaves the judgement to you.
       </p>
     ),
@@ -44,7 +44,7 @@ const STEPS: { title: string; body: ReactNode }[] = [
           "The name and program path of the focused application",
           "When each session starts and ends",
           "When you are idle or the screen is locked",
-          "Projects, categories and labels you assign",
+          "Categories and labels you assign",
         ]}
       />
     ),

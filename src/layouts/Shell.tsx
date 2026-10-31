@@ -1,7 +1,6 @@
 import {
   AppWindow,
   ChartColumn,
-  FolderKanban,
   GanttChart,
   LayoutDashboard,
   Pause,
@@ -12,7 +11,7 @@ import {
   Timer,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { CategoryOptions, ProjectOptions } from "../components/SessionDialog";
+import { CategoryOptions } from "../components/SessionDialog";
 import { Button, Dialog, Field, Input, Select } from "../components/ui";
 import { useData } from "../hooks/useData";
 import { api } from "../services/api";
@@ -20,13 +19,12 @@ import { useApp } from "../stores/app";
 import type { TrackerStatus } from "../types";
 import { formatDuration, formatClock } from "../utils/format";
 
-export type PageId = "dashboard" | "timeline" | "applications" | "projects" | "categories" | "analytics" | "settings";
+export type PageId = "dashboard" | "timeline" | "applications" | "categories" | "analytics" | "settings";
 
 const NAVIGATION: { id: PageId; label: string; icon: typeof Settings }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "timeline", label: "Timeline", icon: GanttChart },
   { id: "applications", label: "Applications", icon: AppWindow },
-  { id: "projects", label: "Projects", icon: FolderKanban },
   { id: "categories", label: "Categories", icon: Tags },
   { id: "analytics", label: "Analytics", icon: ChartColumn },
   { id: "settings", label: "Settings", icon: Settings },
@@ -70,16 +68,13 @@ function useElapsed(since: number | null): number {
 function ManualTimerDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { attempt } = useApp();
   const [label, setLabel] = useState("");
-  const [projectId, setProjectId] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const { data: projects = [] } = useData(() => api.listProjects(false), [open]);
   const { data: categories = [] } = useData(() => api.listCategories(), [open]);
 
   const start = async () => {
     await attempt(() =>
       api.startManualTimer({
         label: label.trim() || null,
-        projectId: projectId ? Number(projectId) : null,
         categoryId: categoryId ? Number(categoryId) : null,
       }),
     );
@@ -99,18 +94,11 @@ function ManualTimerDialog({ open, onClose }: { open: boolean; onClose: () => vo
         <Field label="What are you doing?">
           <Input value={label} autoFocus onChange={(event) => setLabel(event.target.value)} placeholder="Reading chapter 4" />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Project">
-            <Select value={projectId} onChange={(event) => setProjectId(event.target.value)}>
-              <ProjectOptions projects={projects} />
-            </Select>
-          </Field>
-          <Field label="Category">
-            <Select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
-              <CategoryOptions categories={categories} />
-            </Select>
-          </Field>
-        </div>
+        <Field label="Category">
+          <Select value={categoryId} onChange={(event) => setCategoryId(event.target.value)}>
+            <CategoryOptions categories={categories} />
+          </Select>
+        </Field>
         <p className="text-xs text-ink-3">
           A timer replaces automatic tracking and keeps counting while you are away from the keyboard.
         </p>
