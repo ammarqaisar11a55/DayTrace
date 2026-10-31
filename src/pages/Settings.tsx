@@ -1,6 +1,7 @@
 import { listen } from "@tauri-apps/api/event";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { clearIconCache } from "../components/AppIcon";
 import { CapabilityList } from "../components/CapabilityList";
 import { Button, ConfirmDialog, Empty, Field, IconButton, Input, PageHeader, Section, Select, Switch } from "../components/ui";
 import { useData } from "../hooks/useData";
@@ -243,7 +244,10 @@ function DataSettings() {
   const removeAll = async () => {
     setConfirmingDelete(false);
     const count = await attempt(() => api.deleteAllActivity());
-    if (count !== undefined) notify(`${count} sessions deleted`);
+    if (count !== undefined) {
+      clearIconCache();
+      notify(`${count} sessions deleted`);
+    }
   };
 
   return (
@@ -260,7 +264,7 @@ function DataSettings() {
       <ConfirmDialog
         open={confirmingDelete}
         title="Delete all activity history?"
-        body="Every recorded session is removed from this computer, including the copy kept after restoring a backup. Backups you saved yourself are not affected. Your categories and rules stay. This cannot be undone."
+        body="Every recorded session and application is removed from this computer, including the copy kept after restoring a backup. Default categories set on applications go too. Your categories, rules and exclusions stay, and backups you saved yourself are not affected. This cannot be undone."
         action="Delete all history"
         onConfirm={() => void removeAll()}
         onClose={() => setConfirmingDelete(false)}

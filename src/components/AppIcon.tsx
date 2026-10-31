@@ -3,6 +3,11 @@ import { api } from "../services/api";
 
 const cache = new Map<number, string | null>();
 
+/** Application ids are reused once applications are deleted. */
+export function clearIconCache() {
+  cache.clear();
+}
+
 /** The application's own icon, or its initial when the platform has none. */
 export function AppIcon({ id, name, size = 20 }: { id: number | null; name: string; size?: number }) {
   const [source, setSource] = useState<string | null>(id === null ? null : (cache.get(id) ?? null));

@@ -307,6 +307,9 @@ impl Runtime {
             }
             Message::DataReplaced(reply) => {
                 self.stop_tracking();
+                // Anything still queued refers to rows that are gone. A write for a
+                // deleted application would fail, and block every write after it.
+                self.pending.clear();
                 self.rows.clear();
                 self.known_apps = KnownApps::default();
                 self.cached_focus = None;
@@ -877,6 +880,42 @@ mod tests {
         let stored = sessions_of(&database);
         assert_eq!(stored.len(), 1);
         assert!(!stored[0].is_open);
+    }
+
+    #[test]
+    fn tracking_carries_on_after_all_history_is_deleted() {
+        let (_dir, database) = open_database();
+        enable_tracking(&database);
+        let database = Arc::new(database);
+        let backend = Scripted::new();
+
+        // The tracker now remembers both applications.
+        let mut handle = start(&database, &backend);
+        for name in ["Firefox", "Terminal"] {
+            backend.focus(name);
+            wake(&handle);
+            thread::sleep(Duration::from_millis(20));
+        }
+        handle.flush();
+
+        database.delete_all_history().unwrap();
+
+        // Returning to a remembered application queues a write for a row that is
+        // gone, which is the state the tracker is in when the notice reaches it.
+        backend.focus("Firefox");
+        wake(&handle);
+        handle.data_replaced();
+        assert!(sessions_of(&database).is_empty());
+
+        backend.focus("Editor");
+        wake(&handle);
+        thread::sleep(Duration::from_millis(20));
+        wake(&handle);
+        handle.shutdown();
+
+        let stored = sessions_of(&database);
+        assert_eq!(stored.len(), 1, "writes must keep working after the deletion");
+        assert_eq!(stored[0].application_name.as_deref(), Some("Editor"));
     }
 
     #[test]

@@ -36,9 +36,22 @@ On Linux the database is readable only by your user. The database is not encrypt
 access to your user account can read it. Backups you create are not encrypted either.
 
 Restoring a backup keeps your previous data beside the database as
-`daytrace.before-restore.db`, so that you can undo it. **Delete all history** removes this copy, and
-history limits apply to it as well. Backups you saved yourself are yours to manage, and DayTrace
-does not change them.
+`daytrace.before-restore.db`, so that you can undo it. Backups you saved yourself are yours to
+manage, and DayTrace does not change them.
+
+## Deleting data
+
+**Delete all history** removes every session and recorded application, and the copy kept after a
+restore. Your categories, rules and exclusions stay, because you created them. Those can contain
+application names you typed, so remove them too if you want no trace of them.
+
+When sessions are deleted, whether all at once, one at a time or by a history limit, DayTrace
+overwrites them inside its database and empties its log, so they cannot be read back from those
+files. History limits apply to the copy kept after a restore as well.
+
+This works at the level of files. DayTrace cannot reach copies outside its folder, such as your own
+backups, filesystem snapshots or system backups, and SSDs can keep old data internally until it is
+reclaimed. For stronger protection, use full-disk encryption.
 
 Application logs are stored in the standard log directory for your system.
 

@@ -52,7 +52,7 @@ pub fn update_application(
 pub fn delete_application(app: AppHandle, state: State<'_, AppState>, id: i64) -> CommandResult<()> {
     state
         .database
-        .write(|connection| applications::delete_with_history(connection, id))
+        .erase(|connection| applications::delete_with_history(connection, id))
         .map_err(to_message)?;
     state.with_tracker(|tracker| tracker.data_replaced());
     refresh(&app, &state);

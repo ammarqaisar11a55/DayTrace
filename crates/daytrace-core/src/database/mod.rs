@@ -38,6 +38,7 @@ fn connect(path: &Path) -> Result<Connection> {
         "PRAGMA journal_mode = WAL;
          PRAGMA synchronous = NORMAL;
          PRAGMA foreign_keys = ON;
+         PRAGMA secure_delete = ON;
          PRAGMA temp_store = MEMORY;",
     )?;
     Ok(connection)
@@ -112,16 +113,46 @@ impl Database {
         let copy = backup::Backup::new(&source, &mut writer)?;
         copy.run_to_completion(256, Duration::from_millis(10), None)?;
         drop(copy);
-        writer.execute_batch("PRAGMA foreign_keys = ON;")?;
+        writer.execute_batch("PRAGMA foreign_keys = ON; PRAGMA secure_delete = ON;")?;
         migrations::run(&mut writer)?;
+        drop(writer);
+        self.scrub()?;
         Ok(safety_copy)
     }
 
-    /// Deletes every session, and the copy a restore left beside the database,
-    /// which would otherwise keep that history readable on disk.
+    /// Runs a deletion and then clears its traces from the database files.
+    pub fn erase<T>(&self, change: impl FnOnce(&Connection) -> Result<T>) -> Result<T> {
+        let result = self.write(change)?;
+        self.scrub()?;
+        Ok(result)
+    }
+
+    /// Deleted rows linger in the write-ahead log and in free pages. Compacting
+    /// the database and emptying the log leaves them in neither file.
+    fn scrub(&self) -> Result<()> {
+        let writer = lock(&self.writer);
+        writer.execute_batch("VACUUM;")?;
+        let busy: i64 = writer.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| row.get(0))?;
+        if busy != 0 {
+            return Err(CoreError::Invalid(
+                "The data was deleted, but the database log could not be cleared. Restart DayTrace and try again."
+                    .into(),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Deletes every session and recorded application, and the copy a restore
+    /// left beside the database. Categories, rules and exclusions are the user's
+    /// own settings, so they stay.
     pub fn delete_all_history(&self) -> Result<usize> {
-        let count = self.write(sessions::delete_all)?;
+        let count = self.write(|connection| {
+            let count = sessions::delete_all(connection)?;
+            connection.execute("DELETE FROM applications", [])?;
+            Ok(count)
+        })?;
         self.remove_safety_copy()?;
+        self.scrub()?;
         Ok(count)
     }
 
@@ -130,6 +161,9 @@ impl Database {
     pub fn apply_retention(&self, cutoff: i64) -> Result<usize> {
         let count = self.write(|connection| sessions::delete_before(connection, cutoff))?;
         self.expire_safety_copy(cutoff)?;
+        if count > 0 {
+            self.scrub()?;
+        }
         Ok(count)
     }
 
@@ -214,8 +248,9 @@ pub(crate) mod test_support {
 mod tests {
     use super::test_support::database;
     use super::*;
+    use crate::classification::{Condition, ConditionField, ConditionOperator, RuleInput};
     use crate::database::sessions::{insert_manual, list};
-    use crate::models::{ManualSessionInput, SessionFilter};
+    use crate::models::{ExclusionKind, ManualSessionInput, SessionFilter};
 
     fn add_session(db: &Database, start: i64) {
         let input = ManualSessionInput {
@@ -436,6 +471,116 @@ mod tests {
         db.apply_retention(5_000).unwrap();
 
         assert!(!safety.exists());
+    }
+
+    const SECRET: &[u8] = b"SECRET-LABEL";
+
+    /// Searches the raw files, as someone reading the disk would.
+    fn left_on_disk(db: &Database, needle: &[u8]) -> Vec<String> {
+        ["", "-wal"]
+            .iter()
+            .filter_map(|suffix| {
+                let mut path = db.path().to_path_buf().into_os_string();
+                path.push(suffix);
+                let bytes = fs::read(&path).unwrap_or_default();
+                bytes.windows(needle.len()).any(|window| window == needle).then(|| format!("file{suffix}"))
+            })
+            .collect()
+    }
+
+    fn add_secret_sessions(db: &Database, application: Option<i64>) {
+        for index in 0..200 {
+            let input = ManualSessionInput {
+                start_time: 1_000 + index * 2_000,
+                end_time: 2_000 + index * 2_000,
+                label: Some(format!("SECRET-LABEL-{index}")),
+                category_id: None,
+            };
+            let id = db.write(|c| insert_manual(c, &input)).unwrap().id;
+            if application.is_some() {
+                db.write(|c| {
+                    c.execute(
+                        "UPDATE activity_sessions SET application_id = ?1 WHERE id = ?2",
+                        (application, id),
+                    )?;
+                    Ok(())
+                })
+                .unwrap();
+            }
+        }
+    }
+
+    #[test]
+    fn deleted_history_cannot_be_read_back_from_the_files() {
+        let (_dir, db) = database();
+        add_secret_sessions(&db, None);
+        assert!(!left_on_disk(&db, SECRET).is_empty(), "the search must find live data");
+
+        db.delete_all_history().unwrap();
+
+        assert_eq!(left_on_disk(&db, SECRET), Vec::<String>::new());
+        assert!(db.integrity_ok().unwrap());
+    }
+
+    #[test]
+    fn deleting_all_history_clears_applications_but_keeps_the_users_settings() {
+        let (_dir, db) = database();
+        db.write(|c| {
+            let application =
+                applications::upsert(c, "secret-app", "SECRET-APP", Some("/opt/SECRET-PATH"), None)?;
+            let input = RuleInput {
+                name: "Keep me".into(),
+                conditions: vec![Condition {
+                    field: ConditionField::Application,
+                    operator: ConditionOperator::Equals,
+                    value: "code".into(),
+                }],
+                target_category_id: 1,
+                enabled: true,
+            };
+            rules::create(c, &input)?;
+            exclusions::add(c, ExclusionKind::Path, "/private")?;
+            Ok(application)
+        })
+        .unwrap();
+
+        db.delete_all_history().unwrap();
+
+        assert!(db.read(applications::list).unwrap().is_empty());
+        assert_eq!(left_on_disk(&db, b"SECRET-PATH"), Vec::<String>::new());
+        assert_eq!(db.read(rules::list).unwrap().len(), 1);
+        assert_eq!(db.read(exclusions::list).unwrap().len(), 1);
+        assert_eq!(db.read(categories::list).unwrap().len(), 9);
+    }
+
+    #[test]
+    fn deleting_one_applications_history_leaves_no_trace_of_it() {
+        let (_dir, db) = database();
+        let application = db.write(|c| applications::upsert(c, "secret-app", "Secret", None, None)).unwrap();
+        add_secret_sessions(&db, Some(application));
+
+        db.erase(|c| applications::delete_with_history(c, application)).unwrap();
+
+        assert_eq!(left_on_disk(&db, SECRET), Vec::<String>::new());
+    }
+
+    #[test]
+    fn expired_sessions_cannot_be_read_back_from_the_files() {
+        let (_dir, db) = database();
+        add_secret_sessions(&db, None);
+
+        assert_eq!(db.apply_retention(i64::MAX).unwrap(), 200);
+
+        assert_eq!(left_on_disk(&db, SECRET), Vec::<String>::new());
+    }
+
+    #[test]
+    fn the_database_keeps_working_after_being_scrubbed() {
+        let (_dir, db) = database();
+        add_session(&db, 1_000);
+        db.delete_all_history().unwrap();
+        add_session(&db, 5_000);
+        assert_eq!(count(&db), 1);
     }
 
     #[cfg(unix)]

@@ -213,5 +213,17 @@ await check("dark theme renders", async () => {
   await capture("analytics", "analytics-dark");
 });
 
+await check("deleting all history clears sessions and applications", async () => {
+  await driver.visit("settings");
+  await driver.clickText("Privacy and data");
+  await driver.clickText("Delete all history");
+  await driver.click('//dialog[@open]//button[normalize-space()="Delete all history"]');
+  await driver.seesText("sessions deleted", 15000);
+  await driver.visit("applications");
+  await driver.seesText("Applications appear here once tracking has recorded them");
+  await driver.visit("categories");
+  await driver.seesText("Terminal is development");
+});
+
 await driver.stop();
 console.log(`\n${passed} end-to-end checks passed`);

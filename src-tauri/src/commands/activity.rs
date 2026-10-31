@@ -64,7 +64,7 @@ pub fn update_session(
 
 #[tauri::command(async)]
 pub fn delete_session(app: AppHandle, state: State<'_, AppState>, id: i64) -> CommandResult<()> {
-    state.database.write(|connection| sessions::delete(connection, id)).map_err(to_message)?;
+    state.database.erase(|connection| sessions::delete(connection, id)).map_err(to_message)?;
     notify_data_changed(&app);
     Ok(())
 }
