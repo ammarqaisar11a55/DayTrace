@@ -1,6 +1,6 @@
 # Benchmarks
 
-Measured on 2026-10-30 with a release build on Ubuntu 26.04 (GNOME 50.1, Wayland), on a machine
+Measured on 2026-10-31 with a release build on Ubuntu 26.04 (GNOME 50.1, Wayland), on a machine
 with 12 logical CPUs and 7 GB RAM. Other machines will differ. Reproduce with the commands below.
 
 ## Resource use
@@ -33,18 +33,18 @@ tests/gnome/session.sh python3 -I tests/gnome/measure.py target/release/daytrace
 
 ## Query speed
 
-A synthetic year of 219,000 sessions, far more than typical use, in a 30 MB database. Times are
-the best of several runs.
+A synthetic year of 219,000 sessions, far more than typical use, in a 26 MB database. Times are
+the best of several runs, with `secure_delete` on.
 
 | Operation | Time |
 | --- | --- |
-| Insert all sessions | 2.1 s |
-| Report for today | 12 ms |
-| Report for 7 days | 15 ms |
-| Report for 30 days | 24 ms |
-| Report for 365 days | 172 ms |
-| Timeline for one day | 12 ms |
-| Application usage for 30 days | 104 ms |
+| Insert all sessions | 2.9 s |
+| Report for today | 17 ms |
+| Report for 7 days | 18 ms |
+| Report for 30 days | 31 ms |
+| Report for 365 days | 213 ms |
+| Timeline for one day | 16 ms |
+| Application usage for 30 days | 154 ms |
 
 These results are why there is no `daily_summaries` table. Reports are fast from the sessions
 themselves, and a cache would need invalidating on every edit, rule change and timezone change.

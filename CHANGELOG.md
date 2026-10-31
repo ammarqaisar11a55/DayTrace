@@ -6,6 +6,8 @@ All notable changes are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-31
+
 ### Removed
 
 - Projects, including project assignments, project analytics and project exclusions. Sessions,
@@ -20,6 +22,8 @@ All notable changes are recorded here. The format follows
 ### Fixed
 
 - Delete all history now removes the copy kept after a restore, and history limits apply to that copy
+- Delete all history now also clears recorded applications, including their default categories
+- Deleted sessions are now overwritten and can no longer be read back from the database files
 
 ## [0.1.0] - 2026-10-31
 
