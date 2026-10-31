@@ -48,7 +48,6 @@ pub struct Application {
     pub display_name: Option<String>,
     pub executable_path: Option<String>,
     pub icon_path: Option<String>,
-    pub default_project_id: Option<i64>,
     pub default_category_id: Option<i64>,
     pub created_at: i64,
 }
@@ -73,31 +72,7 @@ pub struct ApplicationUsage {
 #[serde(rename_all = "camelCase")]
 pub struct ApplicationPatch {
     pub display_name: Option<String>,
-    pub default_project_id: Option<i64>,
     pub default_category_id: Option<i64>,
-}
-
-#[derive(Clone, Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Project {
-    pub id: i64,
-    pub parent_id: Option<i64>,
-    pub name: String,
-    pub description: String,
-    pub color: String,
-    pub status: String,
-    pub created_at: i64,
-    pub updated_at: i64,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProjectInput {
-    pub parent_id: Option<i64>,
-    pub name: String,
-    #[serde(default)]
-    pub description: String,
-    pub color: String,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -106,7 +81,6 @@ pub struct Category {
     pub id: i64,
     pub name: String,
     pub color: String,
-    pub default_project_id: Option<i64>,
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -116,7 +90,6 @@ pub struct Category {
 pub struct CategoryInput {
     pub name: String,
     pub color: String,
-    pub default_project_id: Option<i64>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -126,9 +99,6 @@ pub struct Session {
     pub application_id: Option<i64>,
     pub application_name: Option<String>,
     pub executable_path: Option<String>,
-    pub project_id: Option<i64>,
-    pub project_name: Option<String>,
-    pub project_color: Option<String>,
     pub category_id: Option<i64>,
     pub category_name: Option<String>,
     pub category_color: Option<String>,
@@ -148,7 +118,6 @@ pub struct SessionFilter {
     pub from: i64,
     pub to: i64,
     pub application_id: Option<i64>,
-    pub project_id: Option<i64>,
     pub category_id: Option<i64>,
     pub limit: Option<i64>,
     pub newest_first: Option<bool>,
@@ -158,7 +127,6 @@ pub struct SessionFilter {
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionPatch {
-    pub project_id: Option<i64>,
     pub category_id: Option<i64>,
     pub label: Option<String>,
     pub start_time: Option<i64>,
@@ -171,7 +139,6 @@ pub struct ManualSessionInput {
     pub start_time: i64,
     pub end_time: i64,
     pub label: Option<String>,
-    pub project_id: Option<i64>,
     pub category_id: Option<i64>,
 }
 
@@ -180,7 +147,6 @@ pub struct ManualSessionInput {
 pub enum ExclusionKind {
     Application,
     Path,
-    Project,
 }
 
 impl ExclusionKind {
@@ -188,7 +154,6 @@ impl ExclusionKind {
         match self {
             Self::Application => "application",
             Self::Path => "path",
-            Self::Project => "project",
         }
     }
 
@@ -196,7 +161,6 @@ impl ExclusionKind {
         match value {
             "application" => Ok(Self::Application),
             "path" => Ok(Self::Path),
-            "project" => Ok(Self::Project),
             other => invalid(format!("Unknown exclusion kind '{other}'")),
         }
     }

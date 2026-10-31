@@ -50,7 +50,6 @@ fn main() {
                         c,
                         &TrackedSession {
                             application_id: Some(apps[(index % 40) as usize]),
-                            project_id: None,
                             category_id: Some(index % 9 + 1),
                             start_time,
                             end_time: start_time + step,

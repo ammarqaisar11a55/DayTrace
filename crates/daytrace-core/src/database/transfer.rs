@@ -3,11 +3,11 @@ use std::io::Write;
 use rusqlite::Connection;
 use serde::Serialize;
 
+use crate::classification::Rule;
 use crate::config::Settings;
-use crate::database::{applications, categories, exclusions, projects, rules, sessions, settings};
+use crate::database::{applications, categories, exclusions, rules, sessions, settings};
 use crate::error::Result;
-use crate::models::{Application, Category, Exclusion, Project, Session, SessionFilter};
-use crate::projects::Rule;
+use crate::models::{Application, Category, Exclusion, Session, SessionFilter};
 use crate::time::now_ms;
 
 #[derive(Serialize)]
@@ -16,7 +16,6 @@ pub struct PersonalData {
     pub exported_at: i64,
     pub settings: Settings,
     pub applications: Vec<Application>,
-    pub projects: Vec<Project>,
     pub categories: Vec<Category>,
     pub rules: Vec<Rule>,
     pub exclusions: Vec<Exclusion>,
@@ -33,7 +32,6 @@ pub fn collect(connection: &Connection) -> Result<PersonalData> {
         exported_at: now_ms(),
         settings: settings::load(connection)?,
         applications: applications::list(connection)?,
-        projects: projects::list(connection, true)?,
         categories: categories::list(connection)?,
         rules: rules::list(connection)?,
         exclusions: exclusions::list(connection)?,
@@ -57,21 +55,17 @@ fn csv_field(value: &str) -> String {
 }
 
 pub fn write_csv(connection: &Connection, output: &mut impl Write) -> Result<()> {
-    writeln!(
-        output,
-        "id,type,application,project,category,label,window_title,start_utc,end_utc,duration_seconds"
-    )?;
+    writeln!(output, "id,type,application,category,label,window_title,start_utc,end_utc,duration_seconds")?;
     for session in all_sessions(connection)? {
         let timestamp =
             |ms: i64| chrono::DateTime::from_timestamp_millis(ms).map(|t| t.to_rfc3339()).unwrap_or_default();
         let optional = |value: &Option<String>| csv_field(value.as_deref().unwrap_or(""));
         writeln!(
             output,
-            "{},{},{},{},{},{},{},{},{},{}",
+            "{},{},{},{},{},{},{},{},{}",
             session.id,
             session.session_type.as_str(),
             optional(&session.application_name),
-            optional(&session.project_name),
             optional(&session.category_name),
             optional(&session.label),
             optional(&session.window_title),
@@ -105,7 +99,6 @@ mod tests {
             start_time: 1_000,
             end_time: 61_000,
             label: Some("Writing, thesis".into()),
-            project_id: None,
             category_id: None,
         };
         db.write(|c| sessions::insert_manual(c, &input)).unwrap();

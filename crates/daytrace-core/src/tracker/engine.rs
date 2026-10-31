@@ -8,7 +8,6 @@ pub type Ts = i64;
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppActivity {
     pub application_id: i64,
-    pub project_id: Option<i64>,
     pub category_id: Option<i64>,
     pub window_title: Option<String>,
 }
@@ -16,7 +15,6 @@ pub struct AppActivity {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ManualActivity {
     pub label: Option<String>,
-    pub project_id: Option<i64>,
     pub category_id: Option<i64>,
 }
 
@@ -46,8 +44,7 @@ impl Activity {
     fn continues(&self, other: &Activity) -> bool {
         match (self, other) {
             (Self::App(a), Self::App(b)) => {
-                (a.application_id, a.project_id, a.category_id)
-                    == (b.application_id, b.project_id, b.category_id)
+                (a.application_id, a.category_id) == (b.application_id, b.category_id)
             }
             _ => self == other,
         }
@@ -304,12 +301,7 @@ mod tests {
     }
 
     fn app(id: i64) -> Focus {
-        Focus::Activity(AppActivity {
-            application_id: id,
-            project_id: None,
-            category_id: None,
-            window_title: None,
-        })
+        Focus::Activity(AppActivity { application_id: id, category_id: None, window_title: None })
     }
 
     fn tick(now: Ts, focus: Focus, idle_ms: i64) -> Tick {
@@ -586,7 +578,7 @@ mod tests {
     #[test]
     fn manual_timer_overrides_tracking_and_idle() {
         let mut engine = engine();
-        let manual = ManualActivity { label: Some("Reading".into()), project_id: None, category_id: None };
+        let manual = ManualActivity { label: Some("Reading".into()), category_id: None };
         let mut store = run(&mut engine, vec![tick(0, app(1), 0), tick(5 * SECOND, app(1), 0)]);
         store.apply(engine.start_manual(10 * SECOND, manual));
         store.apply(engine.tick(tick(30 * MINUTE, app(1), 25 * MINUTE)));
@@ -605,7 +597,6 @@ mod tests {
         let titled = |title: &str| {
             Focus::Activity(AppActivity {
                 application_id: 1,
-                project_id: None,
                 category_id: None,
                 window_title: Some(title.into()),
             })
@@ -617,13 +608,8 @@ mod tests {
     #[test]
     fn a_classification_change_splits_a_session() {
         let mut engine = engine();
-        let classified = |project| {
-            Focus::Activity(AppActivity {
-                application_id: 1,
-                project_id: project,
-                category_id: None,
-                window_title: None,
-            })
+        let classified = |category| {
+            Focus::Activity(AppActivity { application_id: 1, category_id: category, window_title: None })
         };
         let store = run(
             &mut engine,
@@ -681,10 +667,7 @@ mod tests {
 
                 let effects = match random.next(2_000) {
                     0 => engine.stop(now),
-                    1 => engine.start_manual(
-                        now,
-                        ManualActivity { label: None, project_id: None, category_id: None },
-                    ),
+                    1 => engine.start_manual(now, ManualActivity { label: None, category_id: None }),
                     2 => engine.stop_manual(now),
                     _ => engine.tick(Tick {
                         now,

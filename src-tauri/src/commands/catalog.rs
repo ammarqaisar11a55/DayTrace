@@ -1,15 +1,12 @@
-//! Applications, projects, categories and classification rules.
+//! Applications, categories and classification rules.
 
 use std::fs;
 use std::path::Path;
 
 use base64::Engine;
-use daytrace_core::database::{applications, categories, projects, rules};
-use daytrace_core::models::{
-    Application, ApplicationPatch, ApplicationUsage, Category, CategoryInput, Project, ProjectInput,
-};
-use daytrace_core::projects as classification;
-use daytrace_core::projects::{Rule, RuleInput, RulePreview};
+use daytrace_core::classification::{self, Rule, RuleInput, RulePreview};
+use daytrace_core::database::{applications, categories, rules};
+use daytrace_core::models::{Application, ApplicationPatch, ApplicationUsage, Category, CategoryInput};
 use daytrace_core::time::local_range_str;
 use daytrace_core::tracker::runtime::Message;
 use tauri::{AppHandle, State};
@@ -87,58 +84,6 @@ pub fn application_icon(state: State<'_, AppState>, id: i64) -> CommandResult<Op
     let application =
         state.database.read(|connection| applications::get(connection, id)).map_err(to_message)?;
     Ok(application.icon_path.as_deref().and_then(icon_data_url))
-}
-
-#[tauri::command(async)]
-pub fn list_projects(state: State<'_, AppState>, include_archived: bool) -> CommandResult<Vec<Project>> {
-    state.database.read(|connection| projects::list(connection, include_archived)).map_err(to_message)
-}
-
-#[tauri::command(async)]
-pub fn create_project(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    input: ProjectInput,
-) -> CommandResult<Project> {
-    let project =
-        state.database.write(|connection| projects::create(connection, &input)).map_err(to_message)?;
-    notify_data_changed(&app);
-    Ok(project)
-}
-
-#[tauri::command(async)]
-pub fn update_project(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    id: i64,
-    input: ProjectInput,
-) -> CommandResult<Project> {
-    let project =
-        state.database.write(|connection| projects::update(connection, id, &input)).map_err(to_message)?;
-    notify_data_changed(&app);
-    Ok(project)
-}
-
-#[tauri::command(async)]
-pub fn archive_project(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    id: i64,
-    archived: bool,
-) -> CommandResult<()> {
-    state
-        .database
-        .write(|connection| projects::set_archived(connection, id, archived))
-        .map_err(to_message)?;
-    notify_data_changed(&app);
-    Ok(())
-}
-
-#[tauri::command(async)]
-pub fn delete_project(app: AppHandle, state: State<'_, AppState>, id: i64) -> CommandResult<()> {
-    state.database.write(|connection| projects::delete(connection, id)).map_err(to_message)?;
-    refresh(&app, &state);
-    Ok(())
 }
 
 #[tauri::command(async)]

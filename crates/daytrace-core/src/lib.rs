@@ -4,11 +4,11 @@
 //! without a webview toolkit.
 
 pub mod analytics;
+pub mod classification;
 pub mod config;
 pub mod database;
 pub mod error;
 pub mod models;
-pub mod projects;
 pub mod time;
 pub mod tracker;
 pub mod updates;

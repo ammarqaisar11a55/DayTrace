@@ -58,7 +58,6 @@ pub struct Report {
     pub to: String,
     pub totals: Totals,
     pub applications: Vec<RankedItem>,
-    pub projects: Vec<RankedItem>,
     pub categories: Vec<RankedItem>,
     pub hourly: Vec<Bucket>,
     pub daily: Vec<Bucket>,
@@ -72,30 +71,28 @@ struct Row {
     end: i64,
     session_type: SessionType,
     application_id: Option<i64>,
-    project_id: Option<i64>,
     category_id: Option<i64>,
 }
 
 fn load_rows(connection: &Connection, from: i64, to: i64) -> Result<Vec<Row>> {
     let mut statement = connection.prepare_cached(
-        "SELECT start_time, end_time, session_type, application_id, project_id, category_id
+        "SELECT start_time, end_time, session_type, application_id, category_id
          FROM activity_sessions
          WHERE end_time > ?1 AND start_time < ?2
          ORDER BY start_time",
     )?;
     let rows = statement.query_map(params![from, to], |row| {
-        Ok((row.get(0)?, row.get(1)?, row.get::<_, String>(2)?, row.get(3)?, row.get(4)?, row.get(5)?))
+        Ok((row.get(0)?, row.get(1)?, row.get::<_, String>(2)?, row.get(3)?, row.get(4)?))
     })?;
 
     let mut result = Vec::new();
     for row in rows {
-        let (start, end, session_type, application_id, project_id, category_id) = row?;
+        let (start, end, session_type, application_id, category_id) = row?;
         result.push(Row {
             start,
             end,
             session_type: SessionType::parse(&session_type)?,
             application_id,
-            project_id,
             category_id,
         });
     }
@@ -190,7 +187,6 @@ pub fn report<Tz: TimeZone>(
 
     let mut totals = Totals::default();
     let mut applications = HashMap::new();
-    let mut projects = HashMap::new();
     let mut categories = HashMap::new();
     let mut hourly = empty_buckets((0..24).map(|hour| format!("{hour:02}")));
     let mut daily = empty_buckets(dates(from, to).map(|date| date.to_string()));
@@ -216,7 +212,6 @@ pub fn report<Tz: TimeZone>(
             if row.session_type == SessionType::Active {
                 *applications.entry(row.application_id).or_insert(0) += ms;
             }
-            *projects.entry(row.project_id).or_insert(0) += ms;
             *categories.entry(row.category_id).or_insert(0) += ms;
         } else {
             totals.idle_ms += ms;
@@ -250,14 +245,12 @@ pub fn report<Tz: TimeZone>(
 
     let application_names =
         load_names(connection, "SELECT id, COALESCE(display_name, name), NULL FROM applications")?;
-    let project_names = load_names(connection, "SELECT id, name, color FROM projects")?;
     let category_names = load_names(connection, "SELECT id, name, color FROM categories")?;
 
     Ok(Report {
         from: from.to_string(),
         to: to.to_string(),
         applications: rank(applications, &application_names, "Removed application", totals.active_ms),
-        projects: rank(projects, &project_names, "No project", totals.active_ms),
         categories: rank(categories, &category_names, "Uncategorized", totals.active_ms),
         hourly: hourly.into_values().collect(),
         daily: daily.into_values().collect(),
@@ -280,45 +273,6 @@ pub fn local_report(
         return crate::error::invalid("The start date must not be after the end date");
     }
     report(connection, &Local, from, to, now_ms(), focus_categories)
-}
-
-/// Report limited to one project and its descendants' sessions.
-pub fn project_report(
-    connection: &Connection,
-    project_id: i64,
-    from: i64,
-    to: i64,
-) -> Result<Vec<RankedItem>> {
-    let mut statement = connection.prepare(
-        "WITH RECURSIVE tree (id) AS (
-            SELECT id FROM projects WHERE id = ?1
-            UNION
-            SELECT p.id FROM projects p JOIN tree t ON p.parent_id = t.id
-         )
-         SELECT s.application_id, COALESCE(a.display_name, a.name),
-                SUM(MIN(s.end_time, ?3) - MAX(s.start_time, ?2))
-         FROM activity_sessions s
-         LEFT JOIN applications a ON a.id = s.application_id
-         WHERE s.project_id IN tree AND s.end_time > ?2 AND s.start_time < ?3
-         GROUP BY s.application_id
-         ORDER BY 3 DESC",
-    )?;
-    let rows = statement.query_map(params![project_id, from, to], |row| {
-        Ok((row.get::<_, Option<i64>>(0)?, row.get::<_, Option<String>>(1)?, row.get::<_, i64>(2)?))
-    })?;
-
-    let rows = rows.collect::<rusqlite::Result<Vec<_>>>()?;
-    let total: i64 = rows.iter().map(|row| row.2).sum();
-    Ok(rows
-        .into_iter()
-        .map(|(id, name, ms)| RankedItem {
-            id,
-            name: name.unwrap_or_else(|| "Manual entries".into()),
-            color: None,
-            ms,
-            share: if total > 0 { ms as f64 / total as f64 } else { 0.0 },
-        })
-        .collect())
 }
 
 /// The UTC millisecond for a local wall-clock time, for tests and fixtures.
@@ -348,7 +302,6 @@ mod tests {
                 c,
                 &TrackedSession {
                     application_id: app,
-                    project_id: None,
                     category_id: None,
                     start_time: start,
                     end_time: end,
@@ -498,7 +451,6 @@ mod tests {
         let result = run(&db, &UTC, day, day, at(12, 0));
         assert_eq!(result.applications[0].name, "beta");
         assert!((result.applications[0].share - 0.75).abs() < 1e-9);
-        assert_eq!(result.projects[0].name, "No project");
     }
 
     #[test]

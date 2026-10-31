@@ -21,11 +21,11 @@ use super::engine::{
 use super::{
     ActivityTracker, Capabilities, EventSink, Foreground, ForegroundApp, Sample, SampleOptions, SystemEvent,
 };
+use crate::classification::{Classifier, ExclusionSet, Subject};
 use crate::config::Settings;
 use crate::database::sessions::{self, TrackedSession};
-use crate::database::{applications, categories, exclusions, rules, settings, Database};
+use crate::database::{applications, exclusions, rules, settings, Database};
 use crate::error::Result;
-use crate::projects::{Classifier, ExclusionSet, Subject};
 use crate::time::now_ms;
 
 const FLUSH_INTERVAL: Duration = Duration::from_secs(30);
@@ -451,15 +451,9 @@ impl Runtime {
             executable_path: app.executable_path.as_deref(),
             window_title: app.window_title.as_deref(),
         };
-        let classification = self.classifier.classify(Some(application_id), &subject);
-        if self.exclusions.excludes_project(classification.project_id) {
-            return Focus::Excluded;
-        }
-
         Focus::Activity(AppActivity {
             application_id,
-            project_id: classification.project_id,
-            category_id: classification.category_id,
+            category_id: self.classifier.classify(Some(application_id), &subject),
             window_title: app.window_title.clone(),
         })
     }
@@ -560,11 +554,7 @@ impl Runtime {
 
     fn reload_rules(&mut self) -> Result<()> {
         let (classifier, exclusions) = self.database.read(|connection| {
-            let classifier = Classifier::new(
-                rules::list(connection)?,
-                &applications::list(connection)?,
-                &categories::list(connection)?,
-            );
+            let classifier = Classifier::new(rules::list(connection)?, &applications::list(connection)?);
             Ok((classifier, ExclusionSet::new(&exclusions::list(connection)?)))
         })?;
         self.classifier = classifier;
@@ -620,7 +610,6 @@ fn engine_config(settings: &Settings) -> EngineConfig {
 fn tracked_session(segment: &Segment, open: bool) -> TrackedSession {
     let mut session = TrackedSession {
         application_id: None,
-        project_id: None,
         category_id: None,
         start_time: segment.start,
         end_time: segment.end,
@@ -633,12 +622,10 @@ fn tracked_session(segment: &Segment, open: bool) -> TrackedSession {
     match &segment.activity {
         Activity::App(app) => {
             session.application_id = Some(app.application_id);
-            session.project_id = app.project_id;
             session.category_id = app.category_id;
             session.window_title = app.window_title.clone();
         }
         Activity::Manual(manual) => {
-            session.project_id = manual.project_id;
             session.category_id = manual.category_id;
             session.label = manual.label.clone();
             session.manual_override = true;
@@ -828,11 +815,8 @@ mod tests {
         let backend = Scripted::new();
 
         let mut handle = start(&database, &backend);
-        handle.send(Message::StartManual(ManualActivity {
-            label: Some("Reading".into()),
-            project_id: None,
-            category_id: None,
-        }));
+        handle
+            .send(Message::StartManual(ManualActivity { label: Some("Reading".into()), category_id: None }));
         thread::sleep(Duration::from_millis(20));
         handle.send(Message::StopManual);
         handle.shutdown();

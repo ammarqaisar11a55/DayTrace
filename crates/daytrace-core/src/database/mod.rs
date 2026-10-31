@@ -2,7 +2,6 @@ pub mod applications;
 pub mod categories;
 pub mod exclusions;
 mod migrations;
-pub mod projects;
 pub mod rules;
 pub mod sessions;
 pub mod settings;
@@ -172,7 +171,6 @@ mod tests {
             start_time: start,
             end_time: start + 1_000,
             label: Some("Work".into()),
-            project_id: None,
             category_id: None,
         };
         db.write(|c| insert_manual(c, &input)).unwrap();
@@ -257,6 +255,66 @@ mod tests {
         Connection::open(&other).unwrap().execute_batch("CREATE TABLE t (a);").unwrap();
         assert!(db.restore_from(&other).is_err());
         assert_eq!(count(&db), 1);
+    }
+
+    /// Writes a database as the first released schema left it, with one session.
+    fn version_one_database(path: &Path) {
+        let connection = Connection::open(path).unwrap();
+        connection.execute_batch(include_str!("../../migrations/0001_initial.sql")).unwrap();
+        connection
+            .execute_batch(
+                "PRAGMA user_version = 1;
+                 INSERT INTO projects (id, name, color, created_at, updated_at) VALUES (5, 'Thesis', '#000', 0, 0);
+                 INSERT INTO applications (id, platform_identifier, name, created_at, updated_at)
+                    VALUES (3, 'code', 'Code', 0, 0);
+                 INSERT INTO activity_sessions
+                    (application_id, project_id, category_id, start_time, end_time, session_type,
+                     created_at, updated_at)
+                    VALUES (3, 5, 1, 1000, 61000, 'active', 0, 0);",
+            )
+            .unwrap();
+    }
+
+    fn assert_session_survived(db: &Database) {
+        let filter = SessionFilter { from: 0, to: i64::MAX, ..Default::default() };
+        let stored = db.read(|c| list(c, &filter)).unwrap();
+        assert_eq!(stored.len(), 1);
+        assert_eq!(stored[0].application_name.as_deref(), Some("Code"));
+        assert_eq!(stored[0].category_name.as_deref(), Some("Development"));
+        assert_eq!(stored[0].duration_seconds, 60);
+        assert!(db.integrity_ok().unwrap());
+    }
+
+    #[test]
+    fn opening_a_version_one_database_upgrades_it_in_place() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("old.db");
+        version_one_database(&path);
+
+        assert_session_survived(&Database::open(&path).unwrap());
+        assert_session_survived(&Database::open(&path).unwrap());
+    }
+
+    #[test]
+    fn restoring_a_version_one_backup_upgrades_it() {
+        let (dir, db) = database();
+        add_session(&db, 500_000);
+        let backup = dir.path().join("old.db");
+        version_one_database(&backup);
+
+        db.restore_from(&backup).unwrap();
+        assert_session_survived(&db);
+        assert!(db.write(foreign_keys_are_enforced).unwrap());
+    }
+
+    fn foreign_keys_are_enforced(connection: &Connection) -> Result<bool> {
+        let refused = connection.execute(
+            "INSERT INTO classification_rules
+                (name, rule_condition, target_category_id, priority, created_at, updated_at)
+                VALUES ('x', '[]', 9999, 1, 0, 0)",
+            [],
+        );
+        Ok(refused.is_err())
     }
 
     #[cfg(unix)]

@@ -1,4 +1,4 @@
-//! Automatic classification of activity into projects and categories.
+//! Automatic classification of activity into categories.
 
 mod preview;
 
@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{invalid, Result};
-use crate::models::{Application, Category, Exclusion, ExclusionKind};
+use crate::models::{Application, Exclusion, ExclusionKind};
 
 pub use preview::{apply, preview, RuleChange, RulePreview};
 
@@ -41,8 +41,7 @@ pub struct Rule {
     pub id: i64,
     pub name: String,
     pub conditions: Vec<Condition>,
-    pub target_project_id: Option<i64>,
-    pub target_category_id: Option<i64>,
+    pub target_category_id: i64,
     pub priority: i64,
     pub enabled: bool,
 }
@@ -52,8 +51,7 @@ pub struct Rule {
 pub struct RuleInput {
     pub name: String,
     pub conditions: Vec<Condition>,
-    pub target_project_id: Option<i64>,
-    pub target_category_id: Option<i64>,
+    pub target_category_id: i64,
     pub enabled: bool,
 }
 
@@ -67,9 +65,6 @@ impl RuleInput {
         }
         if self.conditions.iter().any(|condition| condition.value.trim().is_empty()) {
             return invalid("Every condition needs a value");
-        }
-        if self.target_project_id.is_none() && self.target_category_id.is_none() {
-            return invalid("A rule must assign a project or a category");
         }
         Ok(())
     }
@@ -117,63 +112,33 @@ impl Rule {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct Classification {
-    pub project_id: Option<i64>,
-    pub category_id: Option<i64>,
-}
-
-/// Applies the documented precedence: enabled rules by ascending priority,
-/// then the application's defaults, then the category's default project. The
-/// first match decides, separately for project and category.
+/// Applies the documented precedence: enabled rules by ascending priority, then
+/// the application's default. The first match decides.
 #[derive(Clone, Debug, Default)]
 pub struct Classifier {
     rules: Vec<Rule>,
-    application_defaults: HashMap<i64, Classification>,
-    category_projects: HashMap<i64, i64>,
+    application_categories: HashMap<i64, i64>,
 }
 
 impl Classifier {
-    pub fn new(mut rules: Vec<Rule>, applications: &[Application], categories: &[Category]) -> Self {
+    pub fn new(mut rules: Vec<Rule>, applications: &[Application]) -> Self {
         rules.retain(|rule| rule.enabled);
         rules.sort_by_key(|rule| (rule.priority, rule.id));
         Self {
             rules,
-            application_defaults: applications
+            application_categories: applications
                 .iter()
-                .map(|application| {
-                    let defaults = Classification {
-                        project_id: application.default_project_id,
-                        category_id: application.default_category_id,
-                    };
-                    (application.id, defaults)
-                })
-                .collect(),
-            category_projects: categories
-                .iter()
-                .filter_map(|category| Some((category.id, category.default_project_id?)))
+                .filter_map(|application| Some((application.id, application.default_category_id?)))
                 .collect(),
         }
     }
 
-    pub fn classify(&self, application_id: Option<i64>, subject: &Subject<'_>) -> Classification {
-        let mut result = Classification::default();
-        for rule in self.rules.iter().filter(|rule| rule.matches(subject)) {
-            result.project_id = result.project_id.or(rule.target_project_id);
-            result.category_id = result.category_id.or(rule.target_category_id);
-            if result.project_id.is_some() && result.category_id.is_some() {
-                return result;
-            }
-        }
-
-        if let Some(defaults) = application_id.and_then(|id| self.application_defaults.get(&id)) {
-            result.project_id = result.project_id.or(defaults.project_id);
-            result.category_id = result.category_id.or(defaults.category_id);
-        }
-        if result.project_id.is_none() {
-            result.project_id = result.category_id.and_then(|id| self.category_projects.get(&id).copied());
-        }
-        result
+    pub fn classify(&self, application_id: Option<i64>, subject: &Subject<'_>) -> Option<i64> {
+        self.rules
+            .iter()
+            .find(|rule| rule.matches(subject))
+            .map(|rule| rule.target_category_id)
+            .or_else(|| application_id.and_then(|id| self.application_categories.get(&id).copied()))
     }
 }
 
@@ -183,7 +148,6 @@ impl Classifier {
 pub struct ExclusionSet {
     applications: HashSet<String>,
     paths: Vec<String>,
-    projects: HashSet<i64>,
 }
 
 fn normalize_path(path: &str) -> String {
@@ -199,9 +163,6 @@ impl ExclusionSet {
                     set.applications.insert(exclusion.value.to_lowercase());
                 }
                 ExclusionKind::Path => set.paths.push(normalize_path(&exclusion.value)),
-                ExclusionKind::Project => {
-                    set.projects.extend(exclusion.value.parse::<i64>());
-                }
             }
         }
         set
@@ -218,10 +179,6 @@ impl ExclusionSet {
             self.paths.iter().any(|excluded| path.starts_with(excluded))
         })
     }
-
-    pub fn excludes_project(&self, project_id: Option<i64>) -> bool {
-        project_id.is_some_and(|id| self.projects.contains(&id))
-    }
 }
 
 #[cfg(test)]
@@ -232,25 +189,18 @@ mod tests {
         Condition { field, operator, value: value.into() }
     }
 
-    fn rule(
-        id: i64,
-        priority: i64,
-        conditions: Vec<Condition>,
-        project: Option<i64>,
-        category: Option<i64>,
-    ) -> Rule {
+    fn rule(id: i64, priority: i64, conditions: Vec<Condition>, category: i64) -> Rule {
         Rule {
             id,
             name: format!("rule {id}"),
             conditions,
-            target_project_id: project,
             target_category_id: category,
             priority,
             enabled: true,
         }
     }
 
-    fn application(id: i64, project: Option<i64>, category: Option<i64>) -> Application {
+    fn application(id: i64, category: Option<i64>) -> Application {
         Application {
             id,
             platform_identifier: "code".into(),
@@ -258,7 +208,6 @@ mod tests {
             display_name: None,
             executable_path: None,
             icon_path: None,
-            default_project_id: project,
             default_category_id: category,
             created_at: 0,
         }
@@ -286,8 +235,7 @@ mod tests {
                 is_code(),
                 condition(ConditionField::ExecutablePath, ConditionOperator::Contains, "/Notes-Saver/"),
             ],
-            Some(7),
-            None,
+            7,
         );
         let failing = rule(
             2,
@@ -296,8 +244,7 @@ mod tests {
                 is_code(),
                 condition(ConditionField::ExecutablePath, ConditionOperator::Contains, "/Other/"),
             ],
-            Some(8),
-            None,
+            8,
         );
         assert!(matching.matches(&code_subject()));
         assert!(!failing.matches(&code_subject()));
@@ -305,71 +252,48 @@ mod tests {
 
     #[test]
     fn lower_priority_number_wins() {
-        let rules =
-            vec![rule(1, 20, vec![is_code()], Some(1), None), rule(2, 10, vec![is_code()], Some(2), None)];
-        let classifier = Classifier::new(rules, &[], &[]);
-        assert_eq!(classifier.classify(None, &code_subject()).project_id, Some(2));
+        let rules = vec![rule(1, 20, vec![is_code()], 1), rule(2, 10, vec![is_code()], 2)];
+        let classifier = Classifier::new(rules, &[]);
+        assert_eq!(classifier.classify(None, &code_subject()), Some(2));
     }
 
     #[test]
     fn equal_priority_falls_back_to_rule_id() {
-        let rules =
-            vec![rule(5, 10, vec![is_code()], Some(5), None), rule(3, 10, vec![is_code()], Some(3), None)];
-        let classifier = Classifier::new(rules, &[], &[]);
-        assert_eq!(classifier.classify(None, &code_subject()).project_id, Some(3));
-    }
-
-    #[test]
-    fn project_and_category_are_decided_independently() {
-        let rules =
-            vec![rule(1, 10, vec![is_code()], None, Some(4)), rule(2, 20, vec![is_code()], Some(9), None)];
-        let classifier = Classifier::new(rules, &[], &[]);
-        let result = classifier.classify(None, &code_subject());
-        assert_eq!(result, Classification { project_id: Some(9), category_id: Some(4) });
+        let rules = vec![rule(5, 10, vec![is_code()], 5), rule(3, 10, vec![is_code()], 3)];
+        let classifier = Classifier::new(rules, &[]);
+        assert_eq!(classifier.classify(None, &code_subject()), Some(3));
     }
 
     #[test]
     fn disabled_rules_are_ignored() {
-        let mut disabled = rule(1, 10, vec![is_code()], Some(1), None);
+        let mut disabled = rule(1, 10, vec![is_code()], 1);
         disabled.enabled = false;
-        let classifier = Classifier::new(vec![disabled], &[], &[]);
-        assert_eq!(classifier.classify(None, &code_subject()).project_id, None);
+        let classifier = Classifier::new(vec![disabled], &[]);
+        assert_eq!(classifier.classify(None, &code_subject()), None);
     }
 
     #[test]
-    fn rules_beat_application_defaults_which_beat_category_defaults() {
-        let applications = [application(1, Some(100), Some(200))];
-        let category = Category {
-            id: 200,
-            name: "Dev".into(),
-            color: "#000".into(),
-            default_project_id: Some(300),
-            created_at: 0,
-            updated_at: 0,
-        };
+    fn rules_beat_application_defaults() {
+        let applications = [application(1, Some(200))];
 
-        let classifier = Classifier::new(vec![], &applications, std::slice::from_ref(&category));
-        assert_eq!(classifier.classify(Some(1), &code_subject()).project_id, Some(100));
+        let classifier = Classifier::new(vec![], &applications);
+        assert_eq!(classifier.classify(Some(1), &code_subject()), Some(200));
 
-        let rules = vec![rule(1, 10, vec![is_code()], Some(50), None)];
-        let classifier = Classifier::new(rules, &applications, std::slice::from_ref(&category));
-        let result = classifier.classify(Some(1), &code_subject());
-        assert_eq!(result, Classification { project_id: Some(50), category_id: Some(200) });
+        let rules = vec![rule(1, 10, vec![is_code()], 50)];
+        let classifier = Classifier::new(rules, &applications);
+        assert_eq!(classifier.classify(Some(1), &code_subject()), Some(50));
+    }
 
-        let no_project = [application(1, None, Some(200))];
-        let classifier = Classifier::new(vec![], &no_project, std::slice::from_ref(&category));
-        assert_eq!(classifier.classify(Some(1), &code_subject()).project_id, Some(300));
+    #[test]
+    fn an_application_without_a_default_has_no_category() {
+        let classifier = Classifier::new(vec![], &[application(1, None)]);
+        assert_eq!(classifier.classify(Some(1), &code_subject()), None);
     }
 
     #[test]
     fn missing_fields_never_match() {
-        let title = rule(
-            1,
-            10,
-            vec![condition(ConditionField::WindowTitle, ConditionOperator::Contains, "x")],
-            Some(1),
-            None,
-        );
+        let title =
+            rule(1, 10, vec![condition(ConditionField::WindowTitle, ConditionOperator::Contains, "x")], 1);
         assert!(!title.matches(&code_subject()));
     }
 
@@ -386,14 +310,10 @@ mod tests {
         let mut input = RuleInput {
             name: "Rule".into(),
             conditions: vec![is_code()],
-            target_project_id: Some(1),
-            target_category_id: None,
+            target_category_id: 1,
             enabled: true,
         };
         assert!(input.validate().is_ok());
-        input.target_project_id = None;
-        assert!(input.validate().is_err());
-        input.target_category_id = Some(1);
         input.conditions.clear();
         assert!(input.validate().is_err());
     }
@@ -403,13 +323,10 @@ mod tests {
         let exclusions = [
             Exclusion { id: 1, kind: ExclusionKind::Application, value: "KeePassXC".into(), created_at: 0 },
             Exclusion { id: 2, kind: ExclusionKind::Path, value: r"C:\Private".into(), created_at: 0 },
-            Exclusion { id: 3, kind: ExclusionKind::Project, value: "42".into(), created_at: 0 },
         ];
         let set = ExclusionSet::new(&exclusions);
         assert!(set.excludes_application("org.keepassxc.keepassxc", "keepassxc", None));
         assert!(set.excludes_application("x", "y", Some("c:/private/tool.exe")));
         assert!(!set.excludes_application("x", "y", Some("/usr/bin/private")));
-        assert!(set.excludes_project(Some(42)));
-        assert!(!set.excludes_project(None));
     }
 }

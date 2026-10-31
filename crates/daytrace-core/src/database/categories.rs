@@ -4,16 +4,15 @@ use crate::error::{invalid, CoreError, Result};
 use crate::models::{Category, CategoryInput};
 use crate::time::now_ms;
 
-const COLUMNS: &str = "id, name, color, default_project_id, created_at, updated_at";
+const COLUMNS: &str = "id, name, color, created_at, updated_at";
 
 fn from_row(row: &Row<'_>) -> rusqlite::Result<Category> {
     Ok(Category {
         id: row.get(0)?,
         name: row.get(1)?,
         color: row.get(2)?,
-        default_project_id: row.get(3)?,
-        created_at: row.get(4)?,
-        updated_at: row.get(5)?,
+        created_at: row.get(3)?,
+        updated_at: row.get(4)?,
     })
 }
 
@@ -47,9 +46,8 @@ pub fn create(connection: &Connection, input: &CategoryInput) -> Result<Category
     }
     connection
         .execute(
-            "INSERT INTO categories (name, color, default_project_id, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?4)",
-            params![name, input.color, input.default_project_id, now_ms()],
+            "INSERT INTO categories (name, color, created_at, updated_at) VALUES (?1, ?2, ?3, ?3)",
+            params![name, input.color, now_ms()],
         )
         .map_err(map_duplicate)?;
     get(connection, connection.last_insert_rowid())
@@ -62,9 +60,8 @@ pub fn update(connection: &Connection, id: i64, input: &CategoryInput) -> Result
     }
     let changed = connection
         .execute(
-            "UPDATE categories SET name = ?2, color = ?3, default_project_id = ?4, updated_at = ?5
-             WHERE id = ?1",
-            params![id, name, input.color, input.default_project_id, now_ms()],
+            "UPDATE categories SET name = ?2, color = ?3, updated_at = ?4 WHERE id = ?1",
+            params![id, name, input.color, now_ms()],
         )
         .map_err(map_duplicate)?;
     if changed == 0 {
@@ -73,13 +70,9 @@ pub fn update(connection: &Connection, id: i64, input: &CategoryInput) -> Result
     get(connection, id)
 }
 
-/// Deletes a category. Sessions using it keep their time and lose the category.
-/// A rule that assigned nothing else has no purpose left and goes with it.
+/// Deletes a category. Sessions using it keep their time and lose the category,
+/// and rules that assigned it go with it.
 pub fn delete(connection: &Connection, id: i64) -> Result<()> {
-    connection.execute(
-        "DELETE FROM classification_rules WHERE target_category_id = ?1 AND target_project_id IS NULL",
-        [id],
-    )?;
     connection.execute("DELETE FROM categories WHERE id = ?1", [id])?;
     Ok(())
 }
@@ -90,7 +83,7 @@ mod tests {
     use crate::database::test_support::database;
 
     fn input(name: &str) -> CategoryInput {
-        CategoryInput { name: name.into(), color: "#000000".into(), default_project_id: None }
+        CategoryInput { name: name.into(), color: "#000000".into() }
     }
 
     #[test]

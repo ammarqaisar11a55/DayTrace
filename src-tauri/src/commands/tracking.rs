@@ -11,7 +11,6 @@ use crate::state::AppState;
 #[serde(rename_all = "camelCase")]
 pub struct ManualTimerInput {
     label: Option<String>,
-    project_id: Option<i64>,
     category_id: Option<i64>,
 }
 
@@ -33,11 +32,7 @@ pub fn resume_tracking(state: State<'_, AppState>) {
 
 #[tauri::command(async)]
 pub fn start_manual_timer(state: State<'_, AppState>, input: ManualTimerInput) {
-    state.send(Message::StartManual(ManualActivity {
-        label: input.label,
-        project_id: input.project_id,
-        category_id: input.category_id,
-    }));
+    state.send(Message::StartManual(ManualActivity { label: input.label, category_id: input.category_id }));
 }
 
 #[tauri::command(async)]

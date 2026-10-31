@@ -1,10 +1,10 @@
 use rusqlite::{params, Connection, OptionalExtension, Row};
 
+use crate::classification::{Rule, RuleInput};
 use crate::error::{CoreError, Result};
-use crate::projects::{Rule, RuleInput};
 use crate::time::now_ms;
 
-const COLUMNS: &str = "id, name, rule_condition, target_project_id, target_category_id, priority, enabled";
+const COLUMNS: &str = "id, name, rule_condition, target_category_id, priority, enabled";
 
 fn from_row(row: &Row<'_>) -> rusqlite::Result<(Rule, String)> {
     Ok((
@@ -12,10 +12,9 @@ fn from_row(row: &Row<'_>) -> rusqlite::Result<(Rule, String)> {
             id: row.get(0)?,
             name: row.get(1)?,
             conditions: Vec::new(),
-            target_project_id: row.get(3)?,
-            target_category_id: row.get(4)?,
-            priority: row.get(5)?,
-            enabled: row.get(6)?,
+            target_category_id: row.get(3)?,
+            priority: row.get(4)?,
+            enabled: row.get(5)?,
         },
         row.get(2)?,
     ))
@@ -50,12 +49,11 @@ pub fn create(connection: &Connection, input: &RuleInput) -> Result<Rule> {
     )?;
     connection.execute(
         "INSERT INTO classification_rules
-            (name, rule_condition, target_project_id, target_category_id, priority, enabled, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
+            (name, rule_condition, target_category_id, priority, enabled, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)",
         params![
             input.name.trim(),
             serde_json::to_string(&input.conditions)?,
-            input.target_project_id,
             input.target_category_id,
             priority,
             input.enabled,
@@ -69,14 +67,12 @@ pub fn update(connection: &Connection, id: i64, input: &RuleInput) -> Result<Rul
     input.validate()?;
     let changed = connection.execute(
         "UPDATE classification_rules
-         SET name = ?2, rule_condition = ?3, target_project_id = ?4, target_category_id = ?5,
-             enabled = ?6, updated_at = ?7
+         SET name = ?2, rule_condition = ?3, target_category_id = ?4, enabled = ?5, updated_at = ?6
          WHERE id = ?1",
         params![
             id,
             input.name.trim(),
             serde_json::to_string(&input.conditions)?,
-            input.target_project_id,
             input.target_category_id,
             input.enabled,
             now_ms()

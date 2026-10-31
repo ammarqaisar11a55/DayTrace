@@ -5,7 +5,7 @@ use crate::models::{Application, ApplicationPatch, ApplicationUsage};
 use crate::time::now_ms;
 
 const COLUMNS: &str = "id, platform_identifier, name, display_name, executable_path, icon_path,
-    default_project_id, default_category_id, created_at";
+    default_category_id, created_at";
 
 fn from_row(row: &Row<'_>) -> rusqlite::Result<Application> {
     Ok(Application {
@@ -15,9 +15,8 @@ fn from_row(row: &Row<'_>) -> rusqlite::Result<Application> {
         display_name: row.get(3)?,
         executable_path: row.get(4)?,
         icon_path: row.get(5)?,
-        default_project_id: row.get(6)?,
-        default_category_id: row.get(7)?,
-        created_at: row.get(8)?,
+        default_category_id: row.get(6)?,
+        created_at: row.get(7)?,
     })
 }
 
@@ -79,14 +78,14 @@ pub fn list_usage(connection: &Connection, from: i64, to: i64) -> Result<Vec<App
          LEFT JOIN activity_sessions s
             ON s.application_id = a.id AND s.end_time > ?1 AND s.start_time < ?2
          GROUP BY a.id
-         ORDER BY 10 DESC, COALESCE(a.display_name, a.name) COLLATE NOCASE"
+         ORDER BY 9 DESC, COALESCE(a.display_name, a.name) COLLATE NOCASE"
     ))?;
     let rows = statement.query_map(params![from, to], |row| {
         Ok(ApplicationUsage {
             application: from_row(row)?,
-            total_ms: row.get(9)?,
-            session_count: row.get(10)?,
-            last_used: row.get(11)?,
+            total_ms: row.get(8)?,
+            session_count: row.get(9)?,
+            last_used: row.get(10)?,
         })
     })?;
     Ok(rows.collect::<rusqlite::Result<_>>()?)
@@ -96,9 +95,9 @@ pub fn update(connection: &Connection, id: i64, patch: &ApplicationPatch) -> Res
     let display_name = patch.display_name.as_deref().map(str::trim).filter(|name| !name.is_empty());
     let changed = connection.execute(
         "UPDATE applications
-         SET display_name = ?2, default_project_id = ?3, default_category_id = ?4, updated_at = ?5
+         SET display_name = ?2, default_category_id = ?3, updated_at = ?4
          WHERE id = ?1",
-        params![id, display_name, patch.default_project_id, patch.default_category_id, now_ms()],
+        params![id, display_name, patch.default_category_id, now_ms()],
     )?;
     if changed == 0 {
         return Err(CoreError::NotFound("Application"));
@@ -133,11 +132,7 @@ mod tests {
     fn display_name_survives_upsert() {
         let (_dir, db) = database();
         let id = db.write(|c| upsert(c, "code", "Code", None, None)).unwrap();
-        let patch = ApplicationPatch {
-            display_name: Some("  Editor ".into()),
-            default_project_id: None,
-            default_category_id: None,
-        };
+        let patch = ApplicationPatch { display_name: Some("  Editor ".into()), default_category_id: None };
         db.write(|c| update(c, id, &patch)).unwrap();
         db.write(|c| upsert(c, "code", "Visual Studio Code", None, None)).unwrap();
         let app = db.read(|c| get(c, id)).unwrap();

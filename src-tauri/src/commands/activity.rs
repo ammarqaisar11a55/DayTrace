@@ -1,4 +1,4 @@
-use daytrace_core::analytics::{self, RankedItem, Report};
+use daytrace_core::analytics::{self, Report};
 use daytrace_core::database::sessions;
 use daytrace_core::models::{ManualSessionInput, Session, SessionFilter, SessionPatch};
 use daytrace_core::time::local_range_str;
@@ -15,7 +15,6 @@ pub struct SessionQuery {
     from: String,
     to: String,
     application_id: Option<i64>,
-    project_id: Option<i64>,
     category_id: Option<i64>,
     limit: Option<i64>,
     newest_first: Option<bool>,
@@ -35,27 +34,12 @@ pub fn get_report(
 }
 
 #[tauri::command(async)]
-pub fn project_breakdown(
-    state: State<'_, AppState>,
-    id: i64,
-    from: String,
-    to: String,
-) -> CommandResult<Vec<RankedItem>> {
-    let (start, end) = local_range_str(&from, &to).map_err(to_message)?;
-    state
-        .database
-        .read(|connection| analytics::project_report(connection, id, start, end))
-        .map_err(to_message)
-}
-
-#[tauri::command(async)]
 pub fn list_sessions(state: State<'_, AppState>, query: SessionQuery) -> CommandResult<Vec<Session>> {
     let (from, to) = local_range_str(&query.from, &query.to).map_err(to_message)?;
     let filter = SessionFilter {
         from,
         to,
         application_id: query.application_id,
-        project_id: query.project_id,
         category_id: query.category_id,
         limit: query.limit,
         newest_first: query.newest_first,
