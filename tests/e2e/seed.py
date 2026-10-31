@@ -17,31 +17,18 @@ now_ms = int(time.time() * 1000)
 random.seed(7)
 
 applications = [
-    ("code", "Visual Studio Code", "/usr/share/code/code", "Development", "DayTrace"),
-    ("firefox", "Firefox", "/usr/lib/firefox/firefox", "Research", None),
-    ("org.gnome.terminal", "Terminal", "/usr/bin/gnome-terminal", "Development", "DayTrace"),
-    ("notion", "Notion", "/opt/notion/notion", "Administration", "University"),
-    ("slack", "Slack", "/usr/bin/slack", "Communication", None),
-    ("figma-linux", "Figma", "/opt/figma/figma", "Design", "Notes Saver"),
-    ("spotify", "Spotify", "/usr/bin/spotify", "Entertainment", None),
+    ("code", "Visual Studio Code", "/usr/share/code/code", "Development"),
+    ("firefox", "Firefox", "/usr/lib/firefox/firefox", "Research"),
+    ("org.gnome.terminal", "Terminal", "/usr/bin/gnome-terminal", "Development"),
+    ("notion", "Notion", "/opt/notion/notion", "Administration"),
+    ("slack", "Slack", "/usr/bin/slack", "Communication"),
+    ("figma-linux", "Figma", "/opt/figma/figma", "Design"),
+    ("spotify", "Spotify", "/usr/bin/spotify", "Entertainment"),
 ]
 
 category_ids = dict(database.execute("SELECT name, id FROM categories"))
-project_ids = {}
-for name, color, parent in [
-    ("University", "#6250d6", None),
-    ("Development", "#2a78d6", None),
-    ("DayTrace", "#1baf7a", "Development"),
-    ("Notes Saver", "#eb6834", "Development"),
-]:
-    cursor = database.execute(
-        "INSERT INTO projects (parent_id, name, color, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-        (project_ids.get(parent), name, color, now_ms, now_ms),
-    )
-    project_ids[name] = cursor.lastrowid
-
 application_ids = {}
-for identifier, name, path, _, _ in applications:
+for identifier, name, path, _ in applications:
     cursor = database.execute(
         "INSERT INTO applications (platform_identifier, name, executable_path, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
         (identifier, name, path, now_ms, now_ms),
@@ -52,18 +39,18 @@ for identifier, name, path, _, _ in applications:
 def insert(kind, start, end, application=None):
     if end <= start:
         return
-    identifier, _, _, category, project = application or (None, None, None, None, None)
+    identifier, _, _, category = application or (None, None, None, None)
     database.execute(
-        """INSERT INTO activity_sessions (application_id, project_id, category_id, start_time, end_time,
-           session_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (application_ids.get(identifier), project_ids.get(project), category_ids.get(category), start, end, kind, now_ms, now_ms),
+        """INSERT INTO activity_sessions (application_id, category_id, start_time, end_time,
+           session_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (application_ids.get(identifier), category_ids.get(category), start, end, kind, now_ms, now_ms),
     )
 
 
 today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 for days_ago in range(30, -1, -1):
     day = today - timedelta(days=days_ago)
-    if day.weekday() >= 5 and random.random() < 0.6:
+    if days_ago and day.weekday() >= 5 and random.random() < 0.6:
         continue
     cursor = day + timedelta(hours=8, minutes=random.randint(30, 80))
     stop = day + timedelta(hours=random.randint(16, 20), minutes=random.randint(0, 59))
@@ -90,11 +77,10 @@ for days_ago in range(30, -1, -1):
             cursor += timedelta(minutes=random.randint(5, 45))
 
 database.execute(
-    """INSERT INTO classification_rules (name, rule_condition, target_project_id, target_category_id, priority, created_at, updated_at)
-       VALUES ('Terminal is development', ?, ?, ?, 10, ?, ?)""",
+    """INSERT INTO classification_rules (name, rule_condition, target_category_id, priority, created_at, updated_at)
+       VALUES ('Terminal is development', ?, ?, 10, ?, ?)""",
     (
         '[{"field":"application","operator":"contains","value":"terminal"}]',
-        project_ids["DayTrace"],
         category_ids["Development"],
         now_ms,
         now_ms,

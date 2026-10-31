@@ -50,7 +50,6 @@ await check("declining consent leaves tracking off", async () => {
 for (const [page, title] of [
   ["timeline", "Timeline"],
   ["applications", "Applications"],
-  ["projects", "Projects"],
   ["categories", "Categories"],
   ["analytics", "Analytics"],
   ["settings", "Settings"],
@@ -68,12 +67,31 @@ await check("the nine default categories are present", async () => {
   await driver.seesText("Entertainment");
 });
 
-await check("a project can be created", async () => {
-  await driver.visit("projects");
-  await driver.clickText("New project");
+await check("projects are gone from the navigation", async () => {
+  assert.equal((await driver.findAll('//nav//a[contains(., "Project")]')).length, 0);
+});
+
+await check("a category can be created", async () => {
+  await driver.visit("categories");
+  await driver.clickText("New category");
   await driver.type('//dialog[@open]//label[contains(., "Name")]//input', "Thesis");
-  await driver.clickText("Create project");
+  await driver.clickText("Create category");
   await driver.find('//*[normalize-space()="Thesis"]');
+});
+
+await check("a rule can be created from the Categories page", async () => {
+  await driver.clickText("New rule");
+  await driver.type('//dialog[@open]//label[contains(., "Name")]//input', "Editors are thesis work");
+  await driver.type('//dialog[@open]//input[@aria-label="Value"]', "code");
+  await driver.script(`
+    const select = [...document.querySelectorAll("dialog[open] select")].at(-1);
+    const option = [...select.options].find((item) => item.text === "Thesis");
+    const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set;
+    set.call(select, option.value);
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  `);
+  await driver.clickText("Create rule");
+  await driver.find('//li//*[normalize-space()="Editors are thesis work"]');
 });
 
 await check("a past entry can be added to the timeline", async () => {
@@ -176,14 +194,13 @@ await check("populated pages render from stored data", async () => {
   await capture("dashboard", "dashboard-month", () => driver.clickText("Last 30 days"));
   await capture("timeline", "timeline");
   await capture("applications", "applications");
-  await capture("projects", "projects");
   await capture("categories", "categories");
   await capture("analytics", "analytics");
   await capture("settings", "settings-tracking");
 });
 
 await check("rule preview reports changes without applying them", async () => {
-  await driver.visit("projects");
+  await driver.visit("categories");
   await driver.clickText("Preview last 30 days");
   await driver.seesText("sessions would change");
   await driver.screenshot(`${shots}/rule-preview.png`);
