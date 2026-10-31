@@ -6,6 +6,17 @@ All notable changes are recorded here. The format follows
 
 ## [Unreleased]
 
+### Removed
+
+- Projects, including project assignments, project analytics and project exclusions. Sessions,
+  applications, categories and their links are kept when upgrading. Rules that only assigned a
+  project are deleted, and rules that also assigned a category keep working.
+
+### Changed
+
+- Classification rules moved to the Categories page and now always assign a category
+- Preview last 30 days also works with no rules, so application defaults can be applied to history
+
 ## [0.1.0] - 2026-10-31
 
 First public test release. See docs/VERIFICATION.md for what has and has not been tested.

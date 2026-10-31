@@ -14,7 +14,7 @@ Automatic tracking stays off until you turn it on.
 | Application icon location | While tracking is on |
 | Session start and end times | While tracking is on |
 | Idle and locked periods | While tracking is on |
-| Projects, categories, labels and rules you create | When you create them |
+| Categories, labels and rules you create | When you create them |
 | Window titles | Only if you turn on "Collect window titles" |
 
 If the application cannot be identified, DayTrace records only that you were active. It does not
@@ -55,7 +55,7 @@ GNOME's isolation between applications. Remove it from Settings at any time.
 
 ## Your controls
 
-In Settings you can turn tracking off, pause it, exclude applications, program paths and projects,
+In Settings you can turn tracking off, pause it, exclude applications and program paths,
 limit how long history is kept, export your data as JSON or CSV, back it up, and delete all of it.
 
 Exclusions take effect before anything is stored: an excluded application is never written to the

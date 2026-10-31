@@ -1,5 +1,8 @@
 # DayTrace Technical Implementation Plan
 
+This is the original plan. Projects were later removed from the product, and references to them
+below are historical. ARCHITECTURE.md describes the current design.
+
 This plan was written after inspecting the repository (empty, no commits) and probing a real
 GNOME 50 Wayland session on Ubuntu 26.04. Statements about platform behaviour are marked
 **verified** when they were observed directly, and **documented** when they rest on upstream

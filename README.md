@@ -23,7 +23,7 @@ Screenshots show generated sample data.
 - Automatic tracking of the focused application, with idle time kept separate from use
 - A day ribbon that shows each day on a 24-hour scale, stacked to show a week or month
 - A timeline where you can correct, relabel, add and delete sessions
-- Projects with sub-projects, custom categories and colors
+- Custom categories and colors
 - Classification rules with predictable precedence, and a preview before they change history
 - Analytics for daily, weekly and monthly trends, plus rankings and an hour-by-weekday view
 - Manual timers, which work even where automatic tracking cannot

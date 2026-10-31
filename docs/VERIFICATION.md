@@ -7,11 +7,11 @@ compiles. Last updated 2026-10-31.
 
 | Area | How |
 | --- | --- |
-| Session engine | 113 unit tests, plus 40 randomized simulations of up to 200,000 steps |
+| Session engine | 115 unit tests, plus 40 randomized simulations of up to 200,000 steps |
 | Timezones, daylight saving, midnight | Unit tests across New York, Havana and Kolkata |
-| Database, migrations, backup, restore | Unit tests |
+| Database, migrations, backup, restore | Unit tests, including upgrading and restoring a real version 1 database |
 | Classification, rule precedence, preview | Unit tests |
-| Application UI | 23 end-to-end checks on the real binary through WebDriver |
+| Application UI | 24 end-to-end checks on the real binary through WebDriver |
 | Autostart entry on Linux | Written and removed, checked on disk by the end-to-end suite |
 | GNOME 50.1 on Wayland | Real headless GNOME Shell: extension, focus, idle, ordering, titles opt-in, crash recovery |
 | Background tracking | Survives closing the window, and quits on close when that setting is off |
@@ -22,7 +22,7 @@ compiles. Last updated 2026-10-31.
 | AppImage | Launched in real GNOME, window opened, database created |
 | `.deb`, `.rpm` | Built and signed. `.deb` contents inspected. Neither has been installed |
 | Windows core logic | 110 tests pass on `windows-latest` in CI, including live Win32 calls for process inspection and idle time |
-| CI on Ubuntu 24.04 | Clippy, the X11 test and all 23 end-to-end checks pass on GitHub Actions |
+| CI on Ubuntu 24.04 | Clippy, the X11 test and all 24 end-to-end checks pass on GitHub Actions |
 | Release workflow | v0.1.0 built and published every package. Both update manifests are served with all six platform entries, and the published `.deb` and Windows installer verify against the shipped key |
 | Snap from the Store | Revision 1 installed from the edge channel on Ubuntu 26.04 with GNOME 50. It launched, and recorded active time as unidentified, as designed under strict confinement |
 

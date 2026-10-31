@@ -5,7 +5,7 @@ DayTrace is a Tauri 2 application with a Rust backend and a React frontend. All 
 ```text
 React UI ── typed invoke() ──> Tauri commands ──> daytrace-core
                                                     ├─ database    migrations and repositories
-                                                    ├─ projects    rules and exclusions
+                                                    ├─ classification   rules and exclusions
                                                     ├─ analytics   timezone-aware reports
                                                     ├─ updates     channels and install methods
                                                     └─ tracker
@@ -83,11 +83,9 @@ to the requested range and split at local day and hour boundaries, so midnight-c
 
 ## Classification
 
-1. A project or category the user set on a session is never overwritten.
-2. Enabled rules run by ascending priority, then by id. The first match decides, separately for
-   project and category.
-3. The application's defaults.
-4. The category's default project.
+1. A category the user set on a session is never overwritten.
+2. Enabled rules run by ascending priority, then by id. The first match decides.
+3. The application's default category.
 
 Applying rules to history only adds or changes assignments. A session no rule matches keeps what it has.
 
