@@ -7,7 +7,7 @@ compiles. Last updated 2026-10-31 for version 0.2.0.
 
 | Area | How |
 | --- | --- |
-| Session engine | 126 unit tests, plus 40 randomized simulations of up to 200,000 steps |
+| Session engine | 128 unit tests, plus 40 randomized simulations of up to 200,000 steps |
 | Timezones, daylight saving, midnight | Unit tests across New York, Havana and Kolkata |
 | Database, migrations, backup, restore | Unit tests, including upgrading and restoring a real version 1 database |
 | Classification, rule precedence, preview | Unit tests |

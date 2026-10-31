@@ -101,23 +101,39 @@ impl Database {
     /// Replaces all data with a validated backup. The previous database is
     /// kept beside the live one in case the restored data is not what the user
     /// expected.
+    ///
+    /// The new safety copy only takes over once the restore has worked, so a
+    /// failed restore keeps the old one. The source may be that old copy, as when
+    /// undoing a restore, and Windows cannot replace a file that is still open.
     pub fn restore_from(&self, source_path: &Path) -> Result<PathBuf> {
         let source = Connection::open_with_flags(source_path, OpenFlags::SQLITE_OPEN_READ_ONLY)?;
         validate_backup(&source)?;
 
+        let incoming = self.path.with_extension("restoring.db");
+        if incoming.exists() {
+            fs::remove_file(&incoming)?;
+        }
+        self.backup_to(&incoming)?;
+        if let Err(error) = self.replace_contents(&source) {
+            let _ = fs::remove_file(&incoming);
+            return Err(error);
+        }
+        drop(source);
+
         self.remove_safety_copy()?;
         let safety_copy = self.safety_copy_path();
-        self.backup_to(&safety_copy)?;
+        fs::rename(&incoming, &safety_copy)?;
+        self.scrub()?;
+        Ok(safety_copy)
+    }
 
+    fn replace_contents(&self, source: &Connection) -> Result<()> {
         let mut writer = lock(&self.writer);
-        let copy = backup::Backup::new(&source, &mut writer)?;
+        let copy = backup::Backup::new(source, &mut writer)?;
         copy.run_to_completion(256, Duration::from_millis(10), None)?;
         drop(copy);
         writer.execute_batch("PRAGMA foreign_keys = ON; PRAGMA secure_delete = ON;")?;
-        migrations::run(&mut writer)?;
-        drop(writer);
-        self.scrub()?;
-        Ok(safety_copy)
+        migrations::run(&mut writer)
     }
 
     /// Runs a deletion and then clears its traces from the database files.
@@ -461,6 +477,35 @@ mod tests {
 
         assert_eq!(db.apply_retention(5_000).unwrap(), 0);
         assert_eq!(sessions_in(&safety), 1);
+    }
+
+    #[test]
+    fn undoing_a_restore_swaps_the_data_back() {
+        let (dir, db) = database();
+        add_session(&db, 1_000);
+        let backup = dir.path().join("backup.db");
+        db.backup_to(&backup).unwrap();
+        add_session(&db, 5_000);
+
+        let safety = db.restore_from(&backup).unwrap();
+        assert_eq!(count(&db), 1);
+
+        let safety_again = db.restore_from(&safety).unwrap();
+        assert_eq!(count(&db), 2, "the data from before the restore is back");
+        assert_eq!(sessions_in(&safety_again), 1, "and the undone state can itself be undone");
+        assert!(!db.path().with_extension("restoring.db").exists());
+    }
+
+    #[test]
+    fn a_restore_that_fails_keeps_the_existing_safety_copy() {
+        let (dir, db, safety) = restored_database(1_000, 5_000);
+        let not_a_backup = dir.path().join("other.db");
+        Connection::open(&not_a_backup).unwrap().execute_batch("CREATE TABLE t (a);").unwrap();
+
+        assert!(db.restore_from(&not_a_backup).is_err());
+
+        assert_eq!(sessions_in(&safety), 2);
+        assert!(!db.path().with_extension("restoring.db").exists());
     }
 
     #[test]

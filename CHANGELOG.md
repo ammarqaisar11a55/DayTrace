@@ -24,6 +24,8 @@ All notable changes are recorded here. The format follows
 - Delete all history now removes the copy kept after a restore, and history limits apply to that copy
 - Delete all history now also clears recorded applications, including their default categories
 - Deleted sessions are now overwritten and can no longer be read back from the database files
+- Add entry no longer defaults to a time in the future, and its times follow the selected day
+- Undoing a restore works on Windows, and a failed restore keeps the existing safety copy
 
 ## [0.1.0] - 2026-10-31
 

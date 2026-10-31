@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppIcon } from "../components/AppIcon";
 import { DayRibbon } from "../components/DayRibbon";
 import { CategoryOptions, SessionDialog } from "../components/SessionDialog";
@@ -35,11 +35,18 @@ function AddEntryDialog({
   onAdded: () => void;
 }) {
   const { attempt, notify } = useApp();
-  const noon = new Date(`${day}T12:00`).getTime();
-  const [start, setStart] = useState(toLocalInput(noon));
-  const [end, setEnd] = useState(toLocalInput(noon + 1_800_000));
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
   const [label, setLabel] = useState("");
   const [categoryId, setCategoryId] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+    // Noon works for any past day, but on today it can still be in the future.
+    const defaultEnd = Math.min(new Date(`${day}T12:30`).getTime(), Date.now());
+    setStart(toLocalInput(defaultEnd - 1_800_000));
+    setEnd(toLocalInput(defaultEnd));
+  }, [open, day]);
 
   const add = async () => {
     const created = await attempt(() =>
