@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { AppWindow, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { AppIcon } from "../components/AppIcon";
 import { DateRangePicker, useRangeSelection } from "../components/DateRangePicker";
 import { CategoryOptions } from "../components/SessionDialog";
-import { Button, ConfirmDialog, Dialog, Empty, ErrorNote, Field, Input, PageHeader, Select } from "../components/ui";
+import { Badge, Button, Card, ConfirmDialog, Dialog, Empty, ErrorNote, Field, Input, PageHeader, Select } from "../components/ui";
 import { useData } from "../hooks/useData";
 import { api } from "../services/api";
 import { useApp } from "../stores/app";
@@ -64,7 +65,7 @@ function EditDialog({
     <>
       <Dialog title={application.displayName ?? application.name} open={!confirming} onClose={onClose}>
         {application.executablePath && (
-          <p className="selectable mb-4 text-xs break-all text-fg-3">{application.executablePath}</p>
+          <p className="selectable mb-5 rounded-sm bg-hover/60 px-2.5 py-1.5 font-mono text-[11px] break-all text-fg-2">{application.executablePath}</p>
         )}
         <div className="space-y-3">
           <Field label="Display name">
@@ -103,54 +104,122 @@ function EditDialog({
   );
 }
 
+type SortKey = "usage" | "name" | "category";
+
 export function Applications() {
   const [selection, setSelection] = useRangeSelection("week");
   const [editing, setEditing] = useState<ApplicationUsage | null>(null);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortKey>("usage");
   const applications = useData(() => api.listApplicationUsage(selection.range), [selection.range]);
   const { data: categories = [] } = useData(() => api.listCategories(), []);
 
-  const list = applications.data ?? [];
-  const top = list[0]?.totalMs || 1;
-  const categoryName = (id: number | null) => categories.find((category) => category.id === id)?.name;
+  const all = applications.data ?? [];
+  const tracked = all.reduce((sum, application) => sum + application.totalMs, 0);
+  const top = Math.max(1, ...all.map((application) => application.totalMs));
+  const categoryOf = (id: number | null) => categories.find((category) => category.id === id);
+  const nameOf = (application: ApplicationUsage) => application.displayName ?? application.name;
+
+  const list = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    const matches = needle
+      ? all.filter((application) =>
+          [nameOf(application), application.name, application.executablePath ?? ""].some((text) =>
+            text.toLowerCase().includes(needle),
+          ),
+        )
+      : all;
+    const byName = (a: ApplicationUsage, b: ApplicationUsage) => nameOf(a).localeCompare(nameOf(b));
+    const sorted = [...matches];
+    if (sort === "name") sorted.sort(byName);
+    if (sort === "category")
+      sorted.sort(
+        (a, b) =>
+          (categoryOf(a.defaultCategoryId)?.name ?? "\uffff").localeCompare(categoryOf(b.defaultCategoryId)?.name ?? "\uffff") ||
+          byName(a, b),
+      );
+    return sorted;
+  }, [all, query, sort, categories]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
-      <PageHeader title="Applications">
+      <PageHeader title="Applications" description="Set a display name and default category for each application.">
         <DateRangePicker value={selection} onChange={setSelection} />
       </PageHeader>
       {applications.error && <ErrorNote message={applications.error} />}
-      {applications.data && list.length === 0 && (
-        <Empty>Applications appear here once tracking has recorded them.</Empty>
+      {applications.data && all.length === 0 && (
+        <Card>
+          <Empty icon={AppWindow}>Applications appear here once tracking has recorded them.</Empty>
+        </Card>
       )}
-      <ul className="-mx-2">
-        {list.map((application) => {
-          const name = application.displayName ?? application.name;
-          return (
-            <li key={application.id}>
-              <button
-                type="button"
-                onClick={() => setEditing(application)}
-                className="flex w-full items-center gap-3 rounded px-2 py-2 text-left hover:bg-line/40"
-              >
-                <AppIcon id={application.id} name={name} size={24} />
-                <span className="w-56 min-w-0 shrink-0">
-                  <span className="block truncate text-[13px]">{name}</span>
-                  <span className="block truncate text-xs text-fg-3">{categoryName(application.defaultCategoryId) ?? "No default category"}</span>
-                </span>
-                <span className="h-1 min-w-0 flex-1 bg-line/50">
-                  <span
-                    className="block h-full rounded-r-[2px] bg-primary"
-                    style={{ width: `${(application.totalMs / top) * 100}%` }}
-                  />
-                </span>
-                <span className="w-16 shrink-0 text-right text-[13px] text-fg-2">
-                  {formatDuration(application.totalMs)}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      {all.length > 0 && (
+        <Card className="p-2">
+          <div className="flex flex-wrap items-center gap-2 p-2 pb-3">
+            <div className="relative min-w-48 flex-1">
+              <Search aria-hidden size={14} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-fg-3" />
+              <Input
+                type="search"
+                aria-label="Search applications"
+                placeholder="Search applications"
+                className="w-full pl-8"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </div>
+            <Select aria-label="Sort by" className="w-44" value={sort} onChange={(event) => setSort(event.target.value as SortKey)}>
+              <option value="usage">Most used first</option>
+              <option value="name">Name</option>
+              <option value="category">Category</option>
+            </Select>
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_4.5rem_4rem] gap-3 border-y border-line px-3 py-2 text-[11px] font-medium tracking-wide text-fg-3 uppercase">
+            <span>Application</span>
+            <span>Usage</span>
+            <span className="text-right">Share</span>
+            <span className="text-right">Time</span>
+          </div>
+          {list.length === 0 && <Empty>No application matches “{query.trim()}”.</Empty>}
+          <ul className="pt-1">
+            {list.map((application) => {
+              const name = nameOf(application);
+              const category = categoryOf(application.defaultCategoryId);
+              return (
+                <li key={application.id}>
+                  <button
+                    type="button"
+                    onClick={() => setEditing(application)}
+                    className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_4.5rem_4rem] items-center gap-3 rounded-sm px-3 py-2 text-left transition-colors hover:bg-hover"
+                  >
+                    <span className="flex min-w-0 items-center gap-3">
+                      <AppIcon id={application.id} name={name} size={26} />
+                      <span className="min-w-0">
+                        <span className="block truncate text-[13px] font-medium">{name}</span>
+                        <span className="mt-0.5 flex">
+                          {category ? (
+                            <Badge>
+                              <ColorDot color={category.color} />
+                              {category.name}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-fg-3">No default category</span>
+                          )}
+                        </span>
+                      </span>
+                    </span>
+                    <span className="h-1.5 overflow-hidden rounded-full bg-hover">
+                      <span className="block h-full rounded-full bg-brand" style={{ width: `${(application.totalMs / top) * 100}%` }} />
+                    </span>
+                    <span className="text-right text-xs text-fg-3">
+                      {tracked > 0 ? `${Math.round((application.totalMs / tracked) * 100)}%` : "0%"}
+                    </span>
+                    <span className="text-right text-[13px] text-fg-2">{formatDuration(application.totalMs)}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      )}
       <EditDialog
         application={editing}
         categories={categories}
@@ -159,4 +228,8 @@ export function Applications() {
       />
     </>
   );
+}
+
+function ColorDot({ color }: { color: string }) {
+  return <span aria-hidden className="size-1.5 rounded-full" style={{ background: color }} />;
 }
