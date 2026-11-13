@@ -128,7 +128,7 @@ await check("a manual timer starts and stops", async () => {
 
 await check("starting with the computer writes a real autostart entry", async () => {
   await driver.visit("settings");
-  await driver.clickText("General");
+  await driver.clickText("Startup");
   await driver.click('//button[@role="switch"][@aria-label="Start automatically when you turn on your computer"]');
   await new Promise((resolve) => setTimeout(resolve, 600));
   const directory = `${process.env.HOME}/.config/autostart`;
@@ -147,24 +147,32 @@ await check("starting hidden depends on both startup options", async () => {
   await driver.screenshot(`${shots}/settings-startup.png`);
 });
 
-await check("theme setting applies immediately", async () => {
+await check("the interface starts dark and the theme setting applies immediately", async () => {
+  assert.equal(await driver.script('return document.documentElement.dataset.theme ?? ""'), "dark");
   await driver.visit("settings");
-  await driver.clickText("General");
+  await driver.clickText("Appearance");
   await driver.find('//label[contains(., "Theme")]//select');
   await driver.script(`
-    const select = [...document.querySelectorAll("select")].find((item) => item.value === "system");
+    const select = [...document.querySelectorAll("select")].find((item) => item.value === "dark");
+    const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set;
+    set.call(select, "light");
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  `);
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  assert.equal(await driver.script('return document.documentElement.dataset.theme ?? ""'), "light");
+  await driver.script(`
+    const select = [...document.querySelectorAll("select")].find((item) => item.value === "light");
     const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set;
     set.call(select, "dark");
     select.dispatchEvent(new Event("change", { bubbles: true }));
   `);
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  assert.equal(await driver.script('return document.documentElement.dataset.theme ?? ""'), "dark");
-  await driver.script(`
-    const select = [...document.querySelectorAll("select")].find((item) => item.value === "dark");
-    const set = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set;
-    set.call(select, "system");
-    select.dispatchEvent(new Event("change", { bubbles: true }));
-  `);
+});
+
+await check("the title bar has window controls and a drag region", async () => {
+  for (const label of ["Minimize", "Maximize", "Close"]) {
+    await driver.find(`//header[@data-tauri-drag-region="deep"]//button[@aria-label="${label}"]`);
+  }
+  await driver.seesText("DayTrace");
 });
 
 await driver.stop();
@@ -186,6 +194,10 @@ const capture = async (page, name, prepare) => {
   if (prepare) await prepare();
   await new Promise((resolve) => setTimeout(resolve, 900));
   await driver.screenshot(`${shots}/${name}.png`);
+  // Only the content area scrolls. If the page itself grew taller than the
+  // window, a hard scroll would lift the title bar and sidebar off screen.
+  const overflow = await driver.script("return document.documentElement.scrollHeight - window.innerHeight");
+  assert.equal(overflow, 0, `${name} makes the window content taller than the window`);
 };
 
 await check("populated pages render from stored data", async () => {
@@ -207,15 +219,16 @@ await check("rule preview reports changes without applying them", async () => {
   await driver.click('//dialog[@open]//button[normalize-space()="Cancel"]');
 });
 
-await check("dark theme renders", async () => {
+await check("light theme renders", async () => {
+  await driver.script('document.documentElement.dataset.theme = "light"');
+  await capture("dashboard", "dashboard-light");
+  await capture("analytics", "analytics-light");
   await driver.script('document.documentElement.dataset.theme = "dark"');
-  await capture("dashboard", "dashboard-dark");
-  await capture("analytics", "analytics-dark");
 });
 
 await check("deleting all history clears sessions and applications", async () => {
   await driver.visit("settings");
-  await driver.clickText("Privacy and data");
+  await driver.clickText("Privacy");
   await driver.clickText("Delete all history");
   await driver.click('//dialog[@open]//button[normalize-space()="Delete all history"]');
   await driver.seesText("sessions deleted", 15000);
