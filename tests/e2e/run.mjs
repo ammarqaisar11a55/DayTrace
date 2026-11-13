@@ -208,7 +208,7 @@ await check("populated pages render from stored data", async () => {
   await capture("applications", "applications");
   await capture("categories", "categories");
   await capture("analytics", "analytics");
-  await capture("settings", "settings-tracking");
+  await capture("settings", "settings");
 });
 
 await check("rule preview reports changes without applying them", async () => {

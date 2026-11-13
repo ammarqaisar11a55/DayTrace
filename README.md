@@ -14,7 +14,15 @@ Everything stays on your computer. There is no account, no cloud service and no 
 
 ![The timeline of a day, with sessions grouped and ready to correct](docs/screenshots/timeline.png)
 
+![Applications with search, sorting and each one's share of tracked time](docs/screenshots/applications.png)
+
+![Categories with their usage, above the classification rules](docs/screenshots/categories.png)
+
 ![Analytics in the light theme](docs/screenshots/analytics-light.png)
+
+![The dashboard in the light theme](docs/screenshots/dashboard-light.png)
+
+![Settings, grouped into sections](docs/screenshots/settings.png)
 
 Screenshots show generated sample data.
 
