@@ -111,4 +111,6 @@ the latest release, and beta uses a rolling `channel-beta` release.
 
 React with TypeScript, Tailwind and Recharts. `services/api.ts` is the only place that calls the
 backend. `hooks/useData.ts` loads data and refreshes it on a timer and on `data-changed` events.
-Colors are CSS custom properties, so light and dark themes switch in one place.
+Colors, radii and timing are `--dt-*` tokens in `styles/app.css`, so the dark and light themes
+switch in one place. The window has no system decorations: `components/app-shell/TitleBar.tsx`
+draws the title bar, its buttons call Tauri's window API, and Tauri keeps the edges resizable.

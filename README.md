@@ -14,7 +14,7 @@ Everything stays on your computer. There is no account, no cloud service and no 
 
 ![The timeline of a day, with sessions grouped and ready to correct](docs/screenshots/timeline.png)
 
-![Analytics in the dark theme](docs/screenshots/analytics-dark.png)
+![Analytics in the light theme](docs/screenshots/analytics-light.png)
 
 Screenshots show generated sample data.
 

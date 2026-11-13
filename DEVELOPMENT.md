@@ -52,6 +52,7 @@ Each of these runs in a disposable session and leaves your desktop alone.
 
 ```bash
 tests/gnome/session.sh python3 -I tests/gnome/tracking.py target/debug/daytrace
+tests/gnome/session.sh --no-extension python3 -I tests/gnome/window.py target/debug/daytrace
 cargo build -p daytrace-core --example probe
 tests/wlroots/run.sh target/debug/examples/probe
 ```

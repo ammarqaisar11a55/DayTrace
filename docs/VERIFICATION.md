@@ -1,18 +1,20 @@
 # Verification status
 
 This records what has actually been run. A platform is not called supported because its code
-compiles. Last updated 2026-10-31 for version 0.2.0.
+compiles. Last updated 2026-11-13, after version 0.2.0.
 
 ## Verified by running it
 
 | Area | How |
 | --- | --- |
-| Session engine | 128 unit tests, plus 40 randomized simulations of up to 200,000 steps |
+| Session engine | 132 unit tests, plus 40 randomized simulations of up to 200,000 steps |
 | Timezones, daylight saving, midnight | Unit tests across New York, Havana and Kolkata |
 | Database, migrations, backup, restore | Unit tests, including upgrading and restoring a real version 1 database |
 | Classification, rule precedence, preview | Unit tests |
 | Deletion | Raw database files are searched after each kind of delete and hold none of the deleted text. Each fix was disabled to confirm its test fails |
-| Application UI | 25 end-to-end checks on the real binary through WebDriver |
+| Application UI | 26 end-to-end checks on the real binary through WebDriver, including that no page is taller than the window |
+| Custom title bar on GNOME 50 Wayland | Real headless GNOME Shell with a virtual pointer: the three buttons, double-click, dragging, resizing from edges and corners, the minimum size, and closing to the background |
+| Lock and unlock order on Linux | Replayed against a fake `logind` and GNOME screen saver on private buses. The old code stayed locked after the unlock and the fix does not |
 | Autostart entry on Linux | Written and removed, checked on disk by the end-to-end suite |
 | GNOME 50.1 on Wayland | Real headless GNOME Shell: extension, focus, idle, ordering, titles opt-in, crash recovery |
 | Background tracking | Survives closing the window, and quits on close when that setting is off |
@@ -40,10 +42,11 @@ compiles. Last updated 2026-10-31 for version 0.2.0.
 | Area | Why |
 | --- | --- |
 | Windows installation, foreground tracking, updates, lock, suspend, startup | Needs a real Windows 10 and 11 desktop |
+| Custom title bar on Windows | The buttons, dragging and edge resizing need a real Windows desktop |
 | Installing `.deb` and `.rpm`, tray behaviour | Needs root, and a real desktop session for the tray |
 | Snap beyond first launch | Only the first launch on one machine has been seen. Autostart, tray and exports inside confinement are untested |
 | Applying an update end to end | Needs a second published release to update to. Only signature checks and version rules are tested |
-| Real suspend, resume and screen lock | Handled by tests in simulated time only; real `logind` signals were not triggered |
+| Real suspend, resume and screen lock | Tested in simulated time and against a fake `logind`; a real desktop was not locked |
 | Fedora, Debian, Linux Mint | Not tested. Only Ubuntu 26.04 was available |
 
 ## Running the suites
@@ -53,5 +56,6 @@ cargo test -p daytrace-core
 npm test
 DAYTRACE_BINARY=$PWD/target/debug/daytrace tests/e2e/run.sh
 tests/gnome/session.sh python3 -I tests/gnome/tracking.py target/debug/daytrace
+tests/gnome/session.sh --no-extension python3 -I tests/gnome/window.py target/debug/daytrace
 tests/wlroots/run.sh target/debug/examples/probe
 ```

@@ -6,6 +6,29 @@ All notable changes are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- A title bar drawn by DayTrace, with minimize, maximize or restore, and close. It drags the
+  window, maximizes on double-click, and leaves the window edges resizable.
+- Search and sorting on the Applications page, with each application's share of tracked time.
+- Today and Yesterday buttons on the Timeline.
+- Settings grouped into General, Appearance, Tracking, Applications, Privacy, Startup, Updates
+  and About.
+
+### Changed
+
+- A new purple design, dark by default, with the Inter typeface. Light keeps the same colors on
+  pale backgrounds, and existing theme choices are kept.
+- The app icon is redrawn in purple.
+- The dashboard shows four summary cards, active and idle time, and recent activity with
+  application icons and categories.
+
+### Fixed
+
+- DayTrace could keep showing Locked after the screen was unlocked on Linux.
+- A hard scroll at the bottom of Analytics moved the whole window content up and left an empty
+  band below it.
+
 ## [0.2.0] - 2026-10-31
 
 ### Removed
