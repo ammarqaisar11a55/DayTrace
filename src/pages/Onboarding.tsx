@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { Logo } from "../components/app-shell/Logo";
 import { CapabilityList } from "../components/CapabilityList";
 import { Button } from "../components/ui";
 import { api } from "../services/api";
@@ -6,10 +7,10 @@ import { useApp } from "../stores/app";
 
 function Bullets({ items }: { items: string[] }) {
   return (
-    <ul className="space-y-1.5">
+    <ul className="space-y-2">
       {items.map((item) => (
         <li key={item} className="flex gap-2 text-fg-2">
-          <span aria-hidden className="mt-[9px] size-1 shrink-0 rounded-full bg-primary" />
+          <span aria-hidden className="mt-[8px] size-1.5 shrink-0 rounded-full bg-accent" />
           {item}
         </li>
       ))}
@@ -93,19 +94,28 @@ export function Onboarding() {
   };
 
   return (
-    <main className="flex h-full items-center justify-center overflow-y-auto p-6">
-      <div className="w-full max-w-lg">
-        <div className="mb-6 flex gap-1" role="progressbar" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={step + 1} aria-label="Setup progress">
+    <main className="flex h-full items-center justify-center overflow-y-auto bg-app p-6">
+      <div className="w-full max-w-xl rounded-xl border border-line bg-surface p-8 shadow-md">
+        <div className="mb-6 flex items-center gap-3">
+          <Logo size={36} />
+          <div>
+            <div className="text-[15px] leading-tight font-semibold">Welcome to DayTrace</div>
+            <div className="text-xs text-fg-3">
+              Step {step + 1} of {STEPS.length}
+            </div>
+          </div>
+        </div>
+        <div className="mb-7 flex gap-1.5" role="progressbar" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={step + 1} aria-label="Setup progress">
           {STEPS.map((item, index) => (
-            <span key={item.title} className={`h-1 flex-1 rounded-sm ${index <= step ? "bg-primary" : "bg-line"}`} />
+            <span key={item.title} className={`h-1 flex-1 rounded-full ${index <= step ? "bg-brand" : "bg-line"}`} />
           ))}
         </div>
-        <h1 className="mb-3 text-[22px] leading-tight font-semibold tracking-tight">{current.title}</h1>
-        <div className="min-h-44">{current.body}</div>
+        <h1 className="mb-3 text-[24px] leading-tight font-semibold tracking-tight">{current.title}</h1>
+        <div className="min-h-44 text-[14px]">{current.body}</div>
 
         {last ? (
-          <div className="mt-6">
-            <p className="mb-3 text-fg-2">
+          <div className="mt-7 border-t border-line pt-6">
+            <p className="mb-4 text-[13px] text-fg-2">
               Automatic tracking stays off until you turn it on. You can change this later in Settings, and pause it at
               any time.
             </p>
@@ -120,7 +130,7 @@ export function Onboarding() {
             </div>
           </div>
         ) : (
-          <div className="mt-6 flex justify-between">
+          <div className="mt-7 flex justify-between border-t border-line pt-6">
             {step > 0 ? <Button onClick={() => setStep(step - 1)}>Back</Button> : <span />}
             <Button tone="primary" onClick={() => setStep(step + 1)}>
               Continue
