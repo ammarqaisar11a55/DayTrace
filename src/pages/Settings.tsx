@@ -296,7 +296,7 @@ function DataSettings() {
 function AppearanceSettings() {
   const { settings, saveSettings } = useApp();
   return (
-    <Section title="Appearance" description="DayTrace is designed dark first. Light uses the same colors on pale surfaces.">
+    <Section title="Appearance" description="Dark is the default. Light uses the same purple on pale backgrounds.">
       <Field label="Theme">
         <Select
           className="w-48"

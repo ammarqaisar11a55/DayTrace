@@ -143,7 +143,7 @@ export function Applications() {
 
   return (
     <>
-      <PageHeader title="Applications" description="Set a display name and default category for each application.">
+      <PageHeader title="Applications" description="Select an application to rename it or set its default category.">
         <DateRangePicker value={selection} onChange={setSelection} />
       </PageHeader>
       {applications.error && <ErrorNote message={applications.error} />}

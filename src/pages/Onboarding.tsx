@@ -32,7 +32,7 @@ const STEPS: { title: string; body: ReactNode }[] = [
     title: "See where your time went",
     body: (
       <p className="text-fg-2">
-        You get an honest record of each day: which applications you used, how your time divided between categories, and
+        You get a record of each day: which applications you used, how your time divided between categories, and
         how your habits change. DayTrace shows the numbers and leaves the judgement to you.
       </p>
     ),

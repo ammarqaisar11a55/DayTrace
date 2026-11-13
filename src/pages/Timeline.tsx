@@ -238,7 +238,7 @@ export function Timeline() {
 
         <Section
           title="Sessions"
-          description={groups.length > 0 ? `${groups.length} entries, repeated switches grouped` : undefined}
+          description={groups.length > 0 ? `${groups.length} entries. Back-to-back sessions in the same application are grouped.` : undefined}
           actions={
             <Select
               aria-label="Filter by application"

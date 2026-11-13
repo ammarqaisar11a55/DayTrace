@@ -53,7 +53,7 @@ export function Analytics() {
 
   return (
     <>
-      <PageHeader title="Analytics" description="Totals and patterns across the selected period.">
+      <PageHeader title="Analytics">
         <DateRangePicker value={selection} onChange={setSelection} />
       </PageHeader>
 
