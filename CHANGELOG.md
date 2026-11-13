@@ -6,6 +6,8 @@ All notable changes are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-13
+
 ### Added
 
 - A title bar drawn by DayTrace, with minimize, maximize or restore, and close. It drags the

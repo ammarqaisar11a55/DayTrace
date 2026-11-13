@@ -1,7 +1,7 @@
 # Verification status
 
 This records what has actually been run. A platform is not called supported because its code
-compiles. Last updated 2026-11-13, after version 0.2.0.
+compiles. Last updated 2026-11-13 for version 0.3.0.
 
 ## Verified by running it
 
