@@ -72,7 +72,7 @@ function Ribbon({
   return (
     <div className="flex items-center gap-3">
       {label && <span className="w-14 shrink-0 text-right text-xs text-fg-3">{label}</span>}
-      <div className="relative min-w-0 flex-1 bg-line/40" style={{ height }}>
+      <div className="relative min-w-0 flex-1 overflow-hidden rounded-[4px] bg-hover/70" style={{ height }}>
         {segments.map((segment) => {
           const left = ((segment.start - dayStart) / span) * 100;
           const width = ((segment.end - segment.start) / span) * 100;
@@ -86,7 +86,7 @@ function Ribbon({
               onMouseEnter={(event) => onHover({ session: segment.session, x: event.clientX })}
               onMouseMove={(event) => onHover({ session: segment.session, x: event.clientX })}
               onMouseLeave={() => onHover(null)}
-              className={`absolute inset-y-0 min-w-px ${segment.away ? "hatch-idle" : ""}`}
+              className={`absolute inset-y-0 min-w-px transition-opacity hover:opacity-80 ${segment.away ? "hatch-idle" : ""}`}
               style={{
                 left: `${left}%`,
                 width: `${width}%`,
@@ -98,7 +98,7 @@ function Ribbon({
         {nowPercent !== null && (
           <span
             aria-hidden
-            className="pointer-events-none absolute -inset-y-1 w-0.5 bg-fg"
+            className="pointer-events-none absolute inset-y-0 w-0.5 bg-fg"
             style={{ left: `${nowPercent}%` }}
           />
         )}
@@ -143,7 +143,7 @@ function Legend({ sessions }: { sessions: Session[] }) {
   }, [sessions]);
 
   return (
-    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-2">
+    <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-fg-2">
       {items.categories.map(([name, color]) => (
         <span key={name} className="inline-flex items-center gap-1.5">
           <ColorSwatch color={color} />
@@ -169,7 +169,7 @@ function Legend({ sessions }: { sessions: Session[] }) {
         </span>
       )}
       <span className="inline-flex items-center gap-1.5">
-        <span aria-hidden className="inline-block size-2.5 rounded-[3px] bg-line/70" />
+        <span aria-hidden className="inline-block size-2.5 rounded-[3px] bg-hover" />
         Not recorded
       </span>
     </div>
@@ -229,7 +229,7 @@ export function DayRibbon({
       {hover && (
         <div
           role="status"
-          className="pointer-events-none fixed top-auto z-20 mt-1 max-w-64 -translate-x-1/2 rounded-md border border-line-strong bg-surface px-2.5 py-1.5 text-xs"
+          className="pointer-events-none fixed top-auto z-20 mt-2 max-w-64 -translate-x-1/2 rounded-sm border border-line bg-elevated px-3 py-2 text-xs shadow-md"
           style={{ left: hover.x }}
         >
           <div className="font-medium">{sessionTitle(hover.session)}</div>

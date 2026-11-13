@@ -6,7 +6,7 @@ import type { Capability, Support } from "../types";
 import { Button } from "./ui";
 
 const SUPPORT: Record<Support, { icon: typeof CircleCheck; label: string; className: string }> = {
-  available: { icon: CircleCheck, label: "Available", className: "text-primary" },
+  available: { icon: CircleCheck, label: "Available", className: "text-success" },
   limited: { icon: CircleAlert, label: "Limited", className: "text-warn" },
   unavailable: { icon: CircleSlash, label: "Not available", className: "text-danger" },
 };
@@ -14,7 +14,7 @@ const SUPPORT: Record<Support, { icon: typeof CircleCheck; label: string; classN
 function CapabilityRow({ name, capability }: { name: string; capability: Capability }) {
   const { icon: Icon, label, className } = SUPPORT[capability.support];
   return (
-    <li className="flex gap-2.5 py-1.5">
+    <li className="flex gap-3 py-2.5">
       <Icon size={15} className={`mt-0.5 shrink-0 ${className}`} aria-hidden />
       <div className="min-w-0 flex-1">
         <div className="flex justify-between gap-3 text-[13px]">
@@ -44,7 +44,7 @@ function ShellIntegration() {
   };
 
   return (
-    <div className="mt-3 rounded-md border border-line-strong p-3">
+    <div className="mt-4 rounded-md border border-line bg-primary-soft/40 p-4">
       <h3 className="text-[13px] font-medium">GNOME Shell integration</h3>
       {state === "notInstalled" && (
         <>
