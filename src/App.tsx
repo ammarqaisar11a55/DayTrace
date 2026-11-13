@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { TitleBar } from "./components/app-shell/TitleBar";
 import { Shell, type PageId } from "./layouts/Shell";
 import { Analytics } from "./pages/Analytics";
 import { Applications } from "./pages/Applications";
@@ -42,8 +43,13 @@ function Pages() {
 
 export function App() {
   return (
-    <AppProvider fallback={<div className="h-full bg-app" />}>
-      <Pages />
-    </AppProvider>
+    <div className="flex h-full flex-col">
+      <TitleBar />
+      <div className="min-h-0 flex-1">
+        <AppProvider fallback={<div className="h-full bg-app" />}>
+          <Pages />
+        </AppProvider>
+      </div>
+    </div>
   );
 }

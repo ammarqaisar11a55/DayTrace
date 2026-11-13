@@ -37,6 +37,9 @@
   --dt-error: #f16c82;
   --dt-error-soft: #3a1e26;
   --dt-info: #7da8ff;
+  /* The close button turns the red people expect, in both themes. */
+  --dt-close: #c42b3c;
+  --dt-close-pressed: #a3202f;
 
   --dt-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --dt-shadow-md: 0 8px 24px rgb(0 0 0 / 0.35), 0 1px 3px rgb(0 0 0 / 0.3);
@@ -141,6 +144,8 @@
   --color-danger: var(--dt-error);
   --color-danger-soft: var(--dt-error-soft);
   --color-info: var(--dt-info);
+  --color-close: var(--dt-close);
+  --color-close-pressed: var(--dt-close-pressed);
 
   --radius-sm: var(--dt-radius-sm);
   --radius-md: var(--dt-radius-md);
@@ -201,6 +206,11 @@ textarea,
 dialog {
   margin: auto;
   color: inherit;
+}
+
+option {
+  background: var(--dt-surface-elevated);
+  color: var(--dt-text-primary);
 }
 
 dialog::backdrop {

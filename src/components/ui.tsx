@@ -1,9 +1,13 @@
-import { X } from "lucide-react";
+import { ChevronDown, X, type LucideIcon } from "lucide-react";
 import {
   useEffect,
   useRef,
+  useState,
   type ButtonHTMLAttributes,
+  type CSSProperties,
+  type FocusEvent,
   type InputHTMLAttributes,
+  type MouseEvent,
   type ReactNode,
   type SelectHTMLAttributes,
 } from "react";
@@ -11,10 +15,10 @@ import {
 type ButtonTone = "primary" | "secondary" | "quiet" | "danger";
 
 const BUTTON_TONES: Record<ButtonTone, string> = {
-  primary: "bg-primary text-on-primary hover:opacity-90",
-  secondary: "border border-line-strong bg-surface text-fg hover:bg-app",
-  quiet: "text-fg-2 hover:bg-line/60 hover:text-fg",
-  danger: "border border-danger text-danger hover:bg-danger-soft",
+  primary: "bg-brand text-on-primary shadow-sm hover:brightness-110 active:brightness-95",
+  secondary: "border border-line-strong bg-surface text-fg hover:bg-hover active:bg-line",
+  quiet: "text-fg-2 hover:bg-hover hover:text-fg active:bg-line",
+  danger: "border border-danger/50 text-danger hover:bg-danger-soft active:bg-danger-soft/70",
 };
 
 export function Button({
@@ -26,8 +30,68 @@ export function Button({
     <button
       type="button"
       {...props}
-      className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-3 text-[13px] font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${BUTTON_TONES[tone]} ${className}`}
+      className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-md px-3.5 text-[13px] font-medium whitespace-nowrap transition duration-150 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:brightness-100 ${BUTTON_TONES[tone]} ${className}`}
     />
+  );
+}
+
+const EDGE = 96;
+
+/**
+ * A label shown on hover or keyboard focus. It is positioned against the
+ * viewport, so scrolling panels and dialogs never clip it.
+ */
+export function Tooltip({
+  label,
+  side = "top",
+  children,
+}: {
+  label: string;
+  side?: "top" | "bottom";
+  children: ReactNode;
+}) {
+  const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const timer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  const show = (event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setAnchor(rect), 350);
+  };
+  const hide = () => {
+    window.clearTimeout(timer.current);
+    setAnchor(null);
+  };
+
+  let position: CSSProperties = {};
+  if (anchor) {
+    const center = anchor.left + anchor.width / 2;
+    const top = side === "bottom" ? anchor.bottom + 6 : anchor.top - 6;
+    const lift = side === "top" ? "-100%" : "0";
+    if (center > window.innerWidth - EDGE) {
+      position = { top, right: Math.max(window.innerWidth - anchor.right, 4), transform: `translateY(${lift})` };
+    } else if (center < EDGE) {
+      position = { top, left: Math.max(anchor.left, 4), transform: `translateY(${lift})` };
+    } else {
+      position = { top, left: center, transform: `translate(-50%, ${lift})` };
+    }
+  }
+
+  return (
+    <span className="inline-flex" onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide} onMouseDown={hide}>
+      {children}
+      {anchor && (
+        <span
+          aria-hidden
+          className="pointer-events-none fixed z-50 rounded-sm border border-line bg-elevated px-2 py-1 text-xs whitespace-nowrap text-fg shadow-md"
+          style={position}
+        >
+          {label}
+        </span>
+      )}
+    </span>
   );
 }
 
@@ -37,34 +101,45 @@ export function IconButton({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { label: string }) {
   return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      {...props}
-      className={`inline-flex size-8 items-center justify-center rounded-md text-fg-2 transition-colors hover:bg-line/60 hover:text-fg disabled:opacity-40 ${className}`}
-    />
+    <Tooltip label={label}>
+      <button
+        type="button"
+        aria-label={label}
+        {...props}
+        className={`inline-flex size-8 items-center justify-center rounded-sm text-fg-2 transition-colors duration-150 hover:bg-hover hover:text-fg active:bg-line disabled:cursor-not-allowed disabled:text-fg-disabled disabled:hover:bg-transparent ${className}`}
+      />
+    </Tooltip>
   );
 }
 
 const FIELD_CLASS =
-  "h-8 rounded-md border border-line-strong bg-surface px-2.5 text-[13px] text-fg placeholder:text-fg-3 disabled:opacity-50";
+  "h-9 rounded-md border border-line-strong bg-surface px-3 text-[13px] text-fg transition-colors duration-150 placeholder:text-fg-3 hover:border-fg-3/60 focus:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-50";
 
 /** Fields fill their container unless the caller gives them a width. */
 export function Input({ className = "w-full", ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${FIELD_CLASS} ${className}`} />;
 }
 
+/** The width class applies to the wrapper, which also draws the chevron. */
 export function Select({ className = "w-full", ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={`${FIELD_CLASS} ${className}`} />;
+  return (
+    <span className={`relative inline-flex ${className}`}>
+      <select {...props} className={`${FIELD_CLASS} w-full appearance-none pr-8`} />
+      <ChevronDown
+        aria-hidden
+        size={14}
+        className="pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 text-fg-3"
+      />
+    </span>
+  );
 }
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[13px] font-medium text-fg">{label}</span>
+      <span className="mb-1.5 block text-[13px] font-medium text-fg">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-fg-3">{hint}</span>}
+      {hint && <span className="mt-1.5 block text-xs text-fg-3">{hint}</span>}
     </label>
   );
 }
@@ -88,12 +163,12 @@ export function Switch({
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-        checked ? "bg-primary" : "bg-line-strong"
+      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-45 ${
+        checked ? "bg-brand" : "bg-line-strong hover:bg-fg-3/50"
       }`}
     >
       <span
-        className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white transition-transform ${
+        className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow-sm transition-transform duration-150 ${
           checked ? "translate-x-4" : ""
         }`}
       />
@@ -129,19 +204,20 @@ export function Dialog({
       onClose={() => {
         if (open) onClose();
       }}
-      className={`w-[calc(100vw-48px)] rounded-lg border border-line-strong bg-surface p-0 ${
+      className={`w-[calc(100vw-48px)] rounded-xl border border-line bg-elevated p-0 shadow-md ${
         wide ? "max-w-2xl" : "max-w-md"
       }`}
     >
       {open && (
-        <div className="p-5">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <h2 className="text-base font-semibold">{title}</h2>
+        <div className="relative p-6">
+          <h2 className="mb-5 pr-10 text-base leading-8 font-semibold">{title}</h2>
+          {children}
+          {/* Last in order, so opening a dialog focuses its first field instead. */}
+          <span className="absolute top-6 right-5">
             <IconButton label="Close" onClick={onClose}>
               <X size={16} />
             </IconButton>
-          </div>
-          {children}
+          </span>
         </div>
       )}
     </dialog>
@@ -165,7 +241,7 @@ export function ConfirmDialog({
 }) {
   return (
     <Dialog title={title} open={open} onClose={onClose}>
-      <p className="mb-5 text-fg-2">{body}</p>
+      <p className="mb-6 text-[13px] text-fg-2">{body}</p>
       <div className="flex justify-end gap-2">
         <Button onClick={onClose}>Keep it</Button>
         <Button tone="danger" onClick={onConfirm}>
@@ -176,44 +252,92 @@ export function ConfirmDialog({
   );
 }
 
-export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
+export function PageHeader({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: ReactNode;
+  children?: ReactNode;
+}) {
   return (
-    <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
-      <h1 className="text-[22px] leading-tight font-semibold tracking-tight">{title}</h1>
+    <header className="mb-6 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+      <div className="min-w-0">
+        <h1 className="text-[28px] leading-tight font-semibold tracking-tight">{title}</h1>
+        {description && <div className="mt-1 text-[13px] text-fg-3">{description}</div>}
+      </div>
       {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </header>
   );
 }
 
+export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <div className={`rounded-lg border border-line bg-surface shadow-sm ${className}`}>{children}</div>;
+}
+
+/** A titled card. Pages are built from these. */
 export function Section({
   title,
+  description,
   actions,
   children,
   className = "",
 }: {
   title: string;
+  description?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
-    <section className={className}>
-      <div className="mb-3 flex items-center justify-between gap-3 border-b border-line pb-2">
-        <h2 className="text-[13px] font-semibold text-fg">{title}</h2>
+    <section className={`min-w-0 rounded-lg border border-line bg-surface p-5 shadow-sm ${className}`}>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-[15px] leading-snug font-semibold text-fg">{title}</h2>
+          {description && <p className="mt-0.5 text-xs text-fg-3">{description}</p>}
+        </div>
         {actions}
       </div>
-      {children}
+      <div>{children}</div>
     </section>
   );
 }
 
-export function Empty({ children }: { children: ReactNode }) {
-  return <p className="py-6 text-[13px] text-fg-3">{children}</p>;
+type BadgeTone = "neutral" | "primary" | "success" | "warn" | "danger";
+
+const BADGE_TONES: Record<BadgeTone, string> = {
+  neutral: "bg-hover text-fg-2",
+  primary: "bg-primary-soft text-accent",
+  success: "bg-success/15 text-success",
+  warn: "bg-warn-soft text-warn",
+  danger: "bg-danger-soft text-danger",
+};
+
+export function Badge({ tone = "neutral", children }: { tone?: BadgeTone; children: ReactNode }) {
+  return (
+    <span className={`inline-flex h-5 items-center gap-1 rounded-full px-2 text-[11px] font-medium whitespace-nowrap ${BADGE_TONES[tone]}`}>
+      {children}
+    </span>
+  );
+}
+
+export function Empty({ children, icon: Icon }: { children: ReactNode; icon?: LucideIcon }) {
+  return (
+    <div className="flex flex-col items-center gap-2.5 py-8 text-center">
+      {Icon && (
+        <span className="inline-flex size-9 items-center justify-center rounded-md bg-primary-soft text-accent">
+          <Icon size={17} strokeWidth={1.75} />
+        </span>
+      )}
+      <p className="max-w-sm text-[13px] text-fg-3">{children}</p>
+    </div>
+  );
 }
 
 export function ErrorNote({ message }: { message: string }) {
   return (
-    <p role="alert" className="rounded-md bg-danger-soft px-3 py-2 text-[13px] text-danger">
+    <p role="alert" className="mb-4 rounded-md border border-danger/30 bg-danger-soft px-3.5 py-2.5 text-[13px] text-danger">
       {message}
     </p>
   );

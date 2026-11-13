@@ -31,6 +31,8 @@ pub fn show_window(app: &AppHandle) {
         .title("DayTrace")
         .inner_size(1180.0, 780.0)
         .min_inner_size(860.0, 560.0)
+        // The web view draws its own title bar; Tauri keeps the edges resizable.
+        .decorations(false)
         .build();
     if let Err(error) = built {
         warn!("could not open the window: {error}");
