@@ -1,7 +1,19 @@
 import { listen } from "@tauri-apps/api/event";
-import { Trash2 } from "lucide-react";
+import {
+  AppWindow,
+  Info,
+  Palette,
+  Power,
+  RefreshCw,
+  Settings2,
+  ShieldCheck,
+  Trash2,
+  Activity,
+  type LucideIcon,
+} from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { clearIconCache } from "../components/AppIcon";
+import { Logo } from "../components/app-shell/Logo";
 import { CapabilityList } from "../components/CapabilityList";
 import { Button, ConfirmDialog, Empty, Field, IconButton, Input, PageHeader, Section, Select, Switch } from "../components/ui";
 import { useData } from "../hooks/useData";
@@ -24,10 +36,10 @@ function Toggle({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="flex items-start justify-between gap-6 py-2">
+    <div className="flex items-start justify-between gap-6 border-t border-line py-3 first:border-t-0 first:pt-0">
       <div>
-        <div className="text-[13px]">{label}</div>
-        {hint && <div className="max-w-prose text-xs text-fg-3">{hint}</div>}
+        <div className="text-[13px] font-medium">{label}</div>
+        {hint && <div className="mt-0.5 max-w-prose text-xs text-fg-3">{hint}</div>}
       </div>
       <Switch checked={checked} onChange={onChange} label={label} disabled={disabled} />
     </div>
@@ -199,7 +211,7 @@ function Exclusions() {
       {exclusions.data?.length === 0 && <Empty>Nothing is excluded.</Empty>}
       <ul>
         {(exclusions.data ?? []).map((exclusion) => (
-          <li key={exclusion.id} className="flex items-center gap-3 border-t border-line py-1 text-[13px]">
+          <li key={exclusion.id} className="flex items-center gap-3 border-t border-line py-1.5 text-[13px]">
             <span className="w-24 shrink-0 text-xs text-fg-3">{KIND_LABELS[exclusion.kind]}</span>
             <span className="selectable min-w-0 flex-1 truncate">{exclusion.value}</span>
             <IconButton
@@ -281,37 +293,29 @@ function DataSettings() {
   );
 }
 
-function GeneralSettings() {
+function AppearanceSettings() {
   const { settings, saveSettings } = useApp();
   return (
-    <Section title="General">
-      <div className="py-2">
-        <Field label="Theme">
-          <Select
-            className="w-44"
-            value={settings.theme}
-            onChange={(event) => void saveSettings({ theme: event.target.value as Settings["theme"] })}
-          >
-            <option value="system">Match system</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </Select>
-        </Field>
-      </div>
+    <Section title="Appearance" description="DayTrace is designed dark first. Light uses the same colors on pale surfaces.">
+      <Field label="Theme">
+        <Select
+          className="w-48"
+          value={settings.theme}
+          onChange={(event) => void saveSettings({ theme: event.target.value as Settings["theme"] })}
+        >
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="system">Match system</option>
+        </Select>
+      </Field>
     </Section>
   );
 }
 
-function StartupSettings() {
+function GeneralSettings() {
   const { settings, saveSettings } = useApp();
   return (
-    <Section title="Startup and background">
-      <Toggle
-        label="Start automatically when you turn on your computer"
-        hint="DayTrace opens each time you sign in to this computer."
-        checked={settings.startOnLogin}
-        onChange={(startOnLogin) => void saveSettings({ startOnLogin })}
-      />
+    <Section title="General">
       <Toggle
         label="Run in the background"
         hint={
@@ -322,20 +326,67 @@ function StartupSettings() {
         checked={settings.runInBackground}
         onChange={(runInBackground) => void saveSettings({ runInBackground })}
       />
+      <div className="flex items-center justify-between gap-6 border-t border-line pt-3">
+        <div>
+          <div className="text-[13px] font-medium">Quit DayTrace</div>
+          <div className="mt-0.5 text-xs text-fg-3">Stops tracking until you open DayTrace again.</div>
+        </div>
+        <Button onClick={() => void api.quitApp()}>Quit DayTrace</Button>
+      </div>
+    </Section>
+  );
+}
+
+function StartupSettings() {
+  const { settings, saveSettings } = useApp();
+  return (
+    <Section title="Startup">
+      <Toggle
+        label="Start automatically when you turn on your computer"
+        hint="DayTrace opens each time you sign in to this computer."
+        checked={settings.startOnLogin}
+        onChange={(startOnLogin) => void saveSettings({ startOnLogin })}
+      />
       <Toggle
         label="Start without opening a window"
         hint={
           settings.startOnLogin && settings.runInBackground
             ? "At startup, DayTrace begins tracking without showing its window."
-            : "Needs both options above to be on."
+            : "Needs the option above, and Run in the background under General, to be on."
         }
         checked={settings.startHidden}
         disabled={!settings.startOnLogin || !settings.runInBackground}
         onChange={(startHidden) => void saveSettings({ startHidden })}
       />
-      <div className="py-2">
-        <Button onClick={() => void api.quitApp()}>Quit DayTrace</Button>
+    </Section>
+  );
+}
+
+function AboutSettings() {
+  const { data: info } = useData(() => api.updateInfo(), []);
+  return (
+    <Section title="About">
+      <div className="flex items-center gap-4">
+        <Logo size={48} />
+        <div>
+          <div className="text-[15px] font-semibold">DayTrace</div>
+          <div className="text-[13px] text-fg-2">Version {info?.currentVersion}</div>
+        </div>
       </div>
+      <dl className="mt-5 space-y-2.5 text-[13px]">
+        <div className="flex gap-4">
+          <dt className="w-24 shrink-0 text-fg-3">Your data</dt>
+          <dd>Stored only on this computer. No account, no cloud service and no telemetry.</dd>
+        </div>
+        <div className="flex gap-4">
+          <dt className="w-24 shrink-0 text-fg-3">License</dt>
+          <dd>MIT</dd>
+        </div>
+        <div className="flex gap-4">
+          <dt className="w-24 shrink-0 text-fg-3">Source code</dt>
+          <dd className="selectable">github.com/ammarqaisar11a55/DayTrace</dd>
+        </div>
+      </dl>
     </Section>
   );
 }
@@ -429,8 +480,8 @@ function UpdateSettings() {
         {state.name === "downloading" && (
           <div className="w-64">
             <div className="mb-1 text-[13px]">Downloading update...{state.percent !== null ? ` ${state.percent}%` : ""}</div>
-            <div className="h-1.5 bg-line">
-              <div className="h-full bg-primary" style={{ width: `${state.percent ?? 0}%` }} />
+            <div className="h-1.5 overflow-hidden rounded-full bg-hover">
+              <div className="h-full rounded-full bg-brand" style={{ width: `${state.percent ?? 0}%` }} />
             </div>
           </div>
         )}
@@ -455,7 +506,7 @@ function UpdateSettings() {
       </div>
 
       {update?.notes && (
-        <pre className="selectable mb-3 max-h-40 overflow-y-auto rounded-md bg-line/40 p-3 font-sans text-xs whitespace-pre-wrap">
+        <pre className="selectable mb-3 max-h-40 overflow-y-auto rounded-md bg-hover/60 p-3 font-sans text-xs whitespace-pre-wrap">
           {update.notes}
         </pre>
       )}
@@ -494,66 +545,72 @@ function UpdateSettings() {
   );
 }
 
-const TABS = [
-  { id: "tracking", label: "Tracking" },
-  { id: "privacy", label: "Privacy and data" },
-  { id: "general", label: "General" },
-  { id: "updates", label: "Updates" },
-] as const;
-
-type TabId = (typeof TABS)[number]["id"];
+const TABS: { id: string; label: string; icon: LucideIcon }[] = [
+  { id: "general", label: "General", icon: Settings2 },
+  { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "tracking", label: "Tracking", icon: Activity },
+  { id: "applications", label: "Applications", icon: AppWindow },
+  { id: "privacy", label: "Privacy", icon: ShieldCheck },
+  { id: "startup", label: "Startup", icon: Power },
+  { id: "updates", label: "Updates", icon: RefreshCw },
+  { id: "about", label: "About", icon: Info },
+];
 
 function Panel({ children }: { children: ReactNode }) {
-  return <div className="max-w-2xl space-y-7">{children}</div>;
+  return <div className="min-w-0 flex-1 space-y-5">{children}</div>;
 }
 
 export function SettingsPage() {
-  const [tab, setTab] = useState<TabId>("tracking");
+  const [tab, setTab] = useState("general");
   return (
     <>
       <PageHeader title="Settings" />
-      <div role="tablist" aria-label="Settings sections" className="mb-6 flex gap-5 border-b border-line">
-        {TABS.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => setTab(id)}
-            className={`-mb-px border-b-2 pb-2 text-[13px] transition-colors ${
-              tab === id ? "border-primary font-medium text-fg" : "border-transparent text-fg-2 hover:text-fg"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="flex items-start gap-6">
+        <div
+          role="tablist"
+          aria-label="Settings sections"
+          aria-orientation="vertical"
+          className="sticky top-0 flex w-48 shrink-0 flex-col gap-0.5"
+        >
+          {TABS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              onClick={() => setTab(id)}
+              className={`flex h-9 items-center gap-2.5 rounded-sm px-3 text-left text-[13px] transition-colors duration-150 ${
+                tab === id ? "bg-primary-soft font-medium text-fg" : "text-fg-2 hover:bg-hover hover:text-fg"
+              }`}
+            >
+              <Icon size={15} strokeWidth={1.75} className={tab === id ? "text-accent" : undefined} />
+              {label}
+            </button>
+          ))}
+        </div>
+        <Panel>
+          {tab === "general" && <GeneralSettings />}
+          {tab === "appearance" && <AppearanceSettings />}
+          {tab === "tracking" && (
+            <>
+              <TrackingSettings />
+              <Section title="What works on this computer" description="What this desktop lets DayTrace see.">
+                <CapabilityList />
+              </Section>
+            </>
+          )}
+          {tab === "applications" && <Exclusions />}
+          {tab === "privacy" && (
+            <>
+              <PrivacySettings />
+              <DataSettings />
+            </>
+          )}
+          {tab === "startup" && <StartupSettings />}
+          {tab === "updates" && <UpdateSettings />}
+          {tab === "about" && <AboutSettings />}
+        </Panel>
       </div>
-      {tab === "tracking" && (
-        <Panel>
-          <TrackingSettings />
-          <Section title="What works on this computer">
-            <CapabilityList />
-          </Section>
-        </Panel>
-      )}
-      {tab === "privacy" && (
-        <Panel>
-          <PrivacySettings />
-          <Exclusions />
-          <DataSettings />
-        </Panel>
-      )}
-      {tab === "general" && (
-        <Panel>
-          <StartupSettings />
-          <GeneralSettings />
-        </Panel>
-      )}
-      {tab === "updates" && (
-        <Panel>
-          <UpdateSettings />
-        </Panel>
-      )}
     </>
   );
 }
