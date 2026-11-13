@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ListFilter, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useData } from "../hooks/useData";
 import { api } from "../services/api";
@@ -128,7 +128,7 @@ function RuleDialog({
           <Input value={name} autoFocus onChange={(event) => setName(event.target.value)} placeholder="Thesis writing" />
         </Field>
         <div>
-          <span className="mb-1 block text-[13px] font-medium">When all of these match</span>
+          <span className="mb-1.5 block text-[13px] font-medium">When all of these match</span>
           <div className="space-y-2">
             {conditions.map((condition, index) => (
               <ConditionRow
@@ -207,7 +207,7 @@ function RulePreviewDialog({
       {preview.samples.length > 0 && (
         <div className="max-h-72 overflow-y-auto border-y border-line">
           <table className="w-full text-left text-xs">
-            <thead className="sticky top-0 bg-surface text-fg-3">
+            <thead className="sticky top-0 bg-elevated text-[11px] tracking-wide text-fg-3 uppercase">
               <tr>
                 <th className="py-1.5 font-medium">Session</th>
                 <th className="py-1.5 font-medium">Now</th>
@@ -296,13 +296,13 @@ export function Rules({ categories }: { categories: Category[] }) {
       }
     >
       {list.length === 0 ? (
-        <Empty>Rules assign categories automatically as activity is recorded.</Empty>
+        <Empty icon={ListFilter}>Rules assign categories automatically as activity is recorded.</Empty>
       ) : (
         <>
-          <p className="mb-2 text-xs text-fg-3">Rules run from the top, and the first match sets the category.</p>
+          <p className="mb-3 text-xs text-fg-3">Rules run from the top, and the first match sets the category.</p>
           <ol className="-mx-2">
             {list.map((rule, index) => (
-              <li key={rule.id} className="flex items-center gap-2 rounded px-2 py-1 hover:bg-line/40">
+              <li key={rule.id} className="flex items-center gap-2 rounded-sm px-2 py-1.5 transition-colors hover:bg-hover">
                 <span className="w-5 shrink-0 text-right text-xs text-fg-3">{index + 1}</span>
                 <button
                   type="button"
