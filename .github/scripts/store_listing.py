@@ -25,20 +25,45 @@ DASHBOARD = "https://dashboard.snapcraft.io/dev/api"
 MAX_SCREENSHOTS = 5
 
 
-def authorization() -> str:
+def credentials() -> tuple:
     encoded = os.environ.get("SNAPCRAFT_STORE_CREDENTIALS", "")
     if not encoded:
         sys.exit("SNAPCRAFT_STORE_CREDENTIALS is not set")
     try:
-        credentials = json.loads(base64.b64decode(encoded))
+        exported = json.loads(base64.b64decode(encoded))
     except ValueError:
         sys.exit("SNAPCRAFT_STORE_CREDENTIALS is not an exported snapcraft login")
-    if credentials.get("t") != "u1-macaroon":
-        sys.exit(f"unsupported credential type: {credentials.get('t')!r}")
-    root = credentials["v"]["r"]
-    discharge = Macaroon.deserialize(credentials["v"]["d"])
-    bound = Macaroon.deserialize(root).prepare_for_request(discharge)
+    if exported.get("t") != "u1-macaroon":
+        sys.exit(f"unsupported credential type: {exported.get('t')!r}")
+    return exported["v"]["r"], exported["v"]["d"]
+
+
+def refresh(discharge: str) -> str:
+    """Ubuntu One renews a discharge the Store considers too old, as snapcraft does."""
+    response = requests.post(
+        "https://login.ubuntu.com/api/v2/tokens/refresh",
+        json={"discharge_macaroon": discharge},
+        headers={"Accept": "application/json"},
+        timeout=30,
+    )
+    if response.status_code != 200:
+        sys.exit(f"refreshing the login failed: {response.status_code}")
+    return response.json()["discharge_macaroon"]
+
+
+def authorization(root: str, discharge: str) -> str:
+    bound = Macaroon.deserialize(root).prepare_for_request(Macaroon.deserialize(discharge))
     return f'Macaroon root="{root}", discharge="{bound.serialize()}"'
+
+
+def needs_refresh(response: requests.Response) -> bool:
+    if response.status_code != 401:
+        return False
+    try:
+        errors = response.json().get("error_list", [])
+    except ValueError:
+        return False
+    return any(error.get("code") == "macaroon-needs-refresh" for error in errors)
 
 
 def snap_id() -> str:
@@ -63,9 +88,13 @@ def main() -> None:
     arguments = parser.parse_args()
 
     url = f"{DASHBOARD}/snaps/{snap_id()}/binary-metadata"
-    headers = {"Authorization": authorization(), "Accept": "application/json"}
+    root, discharge = credentials()
+    headers = {"Authorization": authorization(root, discharge), "Accept": "application/json"}
 
     current = requests.get(url, headers=headers, timeout=30)
+    if needs_refresh(current):
+        headers["Authorization"] = authorization(root, refresh(discharge))
+        current = requests.get(url, headers=headers, timeout=30)
     if current.status_code != 200:
         sys.exit(f"reading the listing failed: {current.status_code} {current.text[:300]}")
     print("current media:\n" + describe(current.json()))
