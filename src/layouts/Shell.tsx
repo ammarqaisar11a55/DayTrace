@@ -199,7 +199,9 @@ export function Shell({ page, children }: { page: PageId; children: ReactNode })
           <StatusPanel />
         </div>
       </aside>
-      <main className="min-w-0 flex-1 overflow-y-auto bg-app">
+      {/* Positioned, so absolutely placed content such as screen-reader captions
+          stays inside the scrolling area instead of stretching the whole page. */}
+      <main className="relative min-w-0 flex-1 overflow-y-auto bg-app">
         <div className="mx-auto max-w-[1180px] px-8 py-7">{children}</div>
       </main>
       <Toasts />
