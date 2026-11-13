@@ -1,0 +1,39 @@
+name: Store listing
+
+# Replaces the Snap Store listing's icon and screenshots with the ones in the
+# repository. Run it by hand after the screenshots or icon change.
+on:
+  workflow_dispatch:
+    inputs:
+      check:
+        description: "Only show the current listing media"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  media:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests==2.32.3 pymacaroons==0.13.0
+      - name: Upload icon and screenshots
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+          CHECK: ${{ inputs.check }}
+        run: |
+          if [ "$CHECK" = "true" ]; then
+            python3 .github/scripts/store_listing.py --check
+          else
+            python3 .github/scripts/store_listing.py src-tauri/icons/128x128@2x.png \
+              docs/screenshots/dashboard-today.png \
+              docs/screenshots/timeline.png \
+              docs/screenshots/applications.png \
+              docs/screenshots/analytics-light.png \
+              docs/screenshots/dashboard-month.png
+          fi
