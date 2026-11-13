@@ -35,8 +35,9 @@ fn main() {
             ),
             other => format!("{other:?}"),
         };
+        let line = format!("{line} locked={}", sample.locked);
         if last.as_ref() != Some(&line) {
-            println!("{line} idle_ms={:?} locked={}", sample.idle_ms, sample.locked);
+            println!("{line} idle_ms={:?}", sample.idle_ms);
             last = Some(line);
         }
         thread::sleep(Duration::from_secs(1));

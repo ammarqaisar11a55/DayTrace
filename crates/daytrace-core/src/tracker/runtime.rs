@@ -179,7 +179,6 @@ struct Runtime {
     manual_started_at: Option<i64>,
     paused_until: Option<i64>,
     paused: bool,
-    locked: bool,
 
     pending: BTreeMap<u64, Option<PendingWrite>>,
     rows: HashMap<u64, i64>,
@@ -221,7 +220,6 @@ impl Runtime {
             manual_started_at: None,
             paused_until: None,
             paused: false,
-            locked: false,
             pending: BTreeMap::new(),
             rows: HashMap::new(),
             last_flush: Instant::now(),
@@ -327,24 +325,16 @@ impl Runtime {
 
     fn handle_system(&mut self, event: SystemEvent) {
         match event {
-            SystemEvent::FocusChanged => self.step(),
-            SystemEvent::Lock => {
-                self.locked = true;
-                self.step();
-            }
-            SystemEvent::Unlock => {
-                self.locked = false;
-                self.step();
-            }
+            // Backends update their lock state before sending these, and the
+            // sample carries it. Keeping a second copy here let a late Lock
+            // event outlast the unlock.
+            SystemEvent::FocusChanged | SystemEvent::Lock | SystemEvent::Unlock => self.step(),
             SystemEvent::Suspend | SystemEvent::Shutdown => {
                 self.manual_started_at = None;
                 self.stop_tracking();
                 self.publish_status();
             }
-            SystemEvent::Resume => {
-                self.locked = false;
-                self.step();
-            }
+            SystemEvent::Resume => self.step(),
         }
     }
 
@@ -394,8 +384,7 @@ impl Runtime {
                 Focus::Excluded
             }
         };
-        let locked = sample.locked || self.locked;
-        let effects = self.engine.tick(Tick { now, focus, idle_ms: sample.idle_ms, locked });
+        let effects = self.engine.tick(Tick { now, focus, idle_ms: sample.idle_ms, locked: sample.locked });
         self.record(effects);
     }
 
@@ -675,6 +664,10 @@ mod tests {
         fn set_idle(&self, idle_ms: Option<i64>) {
             self.0.lock().unwrap().idle_ms = idle_ms;
         }
+
+        fn set_locked(&self, locked: bool) {
+            self.0.lock().unwrap().locked = locked;
+        }
     }
 
     impl ActivityTracker for Scripted {
@@ -916,6 +909,35 @@ mod tests {
         let stored = sessions_of(&database);
         assert_eq!(stored.len(), 1, "writes must keep working after the deletion");
         assert_eq!(stored[0].application_name.as_deref(), Some("Editor"));
+    }
+
+    #[test]
+    fn a_stray_lock_event_does_not_outlast_the_unlock() {
+        let (_dir, database) = open_database();
+        enable_tracking(&database);
+        let database = Arc::new(database);
+        let backend = Scripted::new();
+        backend.focus("Firefox");
+
+        let mut handle = start(&database, &backend);
+        wake(&handle);
+        backend.set_locked(true);
+        handle.send(Message::System(SystemEvent::Lock));
+        handle.flush();
+        assert_eq!(handle.status().unwrap().state, TrackingState::Locked);
+
+        // Two lock sources can disagree for a moment, so a late Lock event can
+        // arrive after the session is already unlocked.
+        backend.set_locked(false);
+        handle.send(Message::System(SystemEvent::Unlock));
+        handle.send(Message::System(SystemEvent::Lock));
+        handle.flush();
+        wake(&handle);
+        handle.flush();
+        let state = handle.status().unwrap().state;
+        handle.shutdown();
+
+        assert_eq!(state, TrackingState::Tracking);
     }
 
     #[test]

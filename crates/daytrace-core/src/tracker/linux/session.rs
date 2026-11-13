@@ -4,12 +4,14 @@
 //! system bus, in which case the capability report says so and suspend is still
 //! caught by the engine's tick-gap detection.
 
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 
 use log::{debug, warn};
-use zbus::blocking::{Connection, MessageIterator, Proxy};
+use zbus::blocking::{proxy, Connection, MessageIterator, Proxy};
+use zbus::proxy::CacheProperties;
 use zbus::zvariant::{OwnedObjectPath, OwnedValue};
 use zbus::MatchRule;
 
@@ -20,14 +22,68 @@ const LOGIND: &str = "org.freedesktop.login1";
 const MANAGER_PATH: &str = "/org/freedesktop/login1";
 const MANAGER: &str = "org.freedesktop.login1.Manager";
 const SESSION: &str = "org.freedesktop.login1.Session";
+const SCREEN_SAVERS: [&str; 2] = ["org.gnome.ScreenSaver", "org.freedesktop.ScreenSaver"];
 
 #[derive(Clone)]
 pub struct SessionMonitor {
     locked: Arc<AtomicBool>,
     logind: Arc<AtomicBool>,
     saver: Arc<AtomicBool>,
+    /// Whether `logind` reports this session's lock state. When it does, it
+    /// is the only source; the screen saver is a fallback for sessions without it.
+    locked_hint: Arc<AtomicBool>,
     system: Option<Connection>,
     session_path: Option<OwnedObjectPath>,
+}
+
+/// A proxy that asks `logind` every time. The default property cache is
+/// updated separately from the signals this module reads, so a value read
+/// right after a change could still be the old one.
+fn session_proxy<'a>(connection: &Connection, path: &OwnedObjectPath) -> zbus::Result<Proxy<'a>> {
+    proxy::Builder::new(connection)
+        .destination(LOGIND)?
+        .path(path.as_str().to_string())?
+        .interface(SESSION)?
+        .cache_properties(CacheProperties::No)
+        .build()
+}
+
+fn read_locked_hint(connection: &Connection, path: &OwnedObjectPath) -> Option<bool> {
+    session_proxy(connection, path).ok()?.get_property("LockedHint").ok()
+}
+
+/// What a `PropertiesChanged` signal says about `LockedHint`: its new value,
+/// that it changed without a value, or nothing at all.
+#[derive(Debug, PartialEq, Eq)]
+enum HintChange {
+    Value(bool),
+    Invalidated,
+    Unrelated,
+}
+
+fn locked_hint_change(interface: &str, changed: &HashMap<String, OwnedValue>, invalidated: &[String]) -> HintChange {
+    if interface != SESSION {
+        return HintChange::Unrelated;
+    }
+    if let Some(value) = changed.get("LockedHint") {
+        return match bool::try_from(value) {
+            Ok(value) => HintChange::Value(value),
+            Err(_) => HintChange::Invalidated,
+        };
+    }
+    if invalidated.iter().any(|name| name == "LockedHint") {
+        HintChange::Invalidated
+    } else {
+        HintChange::Unrelated
+    }
+}
+
+/// Records a new lock state and reports a change, if there was one.
+fn publish(locked: &AtomicBool, value: bool, sink: &EventSink) -> bool {
+    if locked.swap(value, Ordering::SeqCst) == value {
+        return true;
+    }
+    sink.send(if value { SystemEvent::Lock } else { SystemEvent::Unlock })
 }
 
 fn session_path(connection: &Connection) -> zbus::Result<OwnedObjectPath> {
@@ -83,31 +139,42 @@ fn watch_locked_hint(
         .member("PropertiesChanged")?
         .path(path.as_ref())?
         .build();
-    let proxy = Proxy::new(&connection, LOGIND, path.as_str().to_string(), SESSION)?;
     for message in MessageIterator::for_match_rule(rule, &connection, None)? {
-        message?;
-        let Ok(value) = proxy.get_property::<bool>("LockedHint") else { continue };
-        if locked.swap(value, Ordering::SeqCst) != value {
-            let event = if value { SystemEvent::Lock } else { SystemEvent::Unlock };
-            if !sink.send(event) {
-                break;
-            }
+        let message = message?;
+        let Ok((interface, changed, invalidated)) =
+            message.body().deserialize::<(String, HashMap<String, OwnedValue>, Vec<String>)>()
+        else {
+            continue;
+        };
+        let value = match locked_hint_change(&interface, &changed, &invalidated) {
+            HintChange::Value(value) => value,
+            HintChange::Invalidated => match read_locked_hint(&connection, &path) {
+                Some(value) => value,
+                None => continue,
+            },
+            HintChange::Unrelated => continue,
+        };
+        if !publish(&locked, value, &sink) {
+            break;
         }
     }
     Ok(())
 }
 
-fn watch_screen_saver(locked: Arc<AtomicBool>, sink: EventSink) -> zbus::Result<()> {
+fn watch_screen_saver(locked: Arc<AtomicBool>, locked_hint: Arc<AtomicBool>, sink: EventSink) -> zbus::Result<()> {
     let connection = Connection::session()?;
     let rule = MatchRule::builder().msg_type(zbus::message::Type::Signal).member("ActiveChanged")?.build();
     for message in MessageIterator::for_match_rule(rule, &connection, None)? {
         let message = message?;
+        let header = message.header();
+        let from_screen_saver = header.interface().is_some_and(|name| SCREEN_SAVERS.contains(&name.as_str()));
+        // Two sources writing one flag could undo each other's unlock.
+        if !from_screen_saver || locked_hint.load(Ordering::SeqCst) {
+            continue;
+        }
         let Ok(active) = message.body().deserialize::<bool>() else { continue };
-        if locked.swap(active, Ordering::SeqCst) != active {
-            let event = if active { SystemEvent::Lock } else { SystemEvent::Unlock };
-            if !sink.send(event) {
-                break;
-            }
+        if !publish(&locked, active, &sink) {
+            break;
         }
     }
     Ok(())
@@ -118,6 +185,7 @@ impl SessionMonitor {
         let locked = Arc::new(AtomicBool::new(false));
         let logind = Arc::new(AtomicBool::new(false));
         let saver = Arc::new(AtomicBool::new(false));
+        let locked_hint = Arc::new(AtomicBool::new(false));
 
         let system = Connection::system().ok();
         let session_path = system.as_ref().and_then(|connection| session_path(connection).ok());
@@ -134,10 +202,9 @@ impl SessionMonitor {
         }
 
         if let (Some(connection), Some(path)) = (&system, &session_path) {
-            if let Ok(proxy) = Proxy::new(connection, LOGIND, path.as_str().to_string(), SESSION) {
-                if let Ok(value) = proxy.get_property::<bool>("LockedHint") {
-                    locked.store(value, Ordering::SeqCst);
-                }
+            if let Some(value) = read_locked_hint(connection, path) {
+                locked.store(value, Ordering::SeqCst);
+                locked_hint.store(true, Ordering::SeqCst);
             }
             let (connection, path, state, events) =
                 (connection.clone(), path.clone(), locked.clone(), sink.clone());
@@ -145,13 +212,23 @@ impl SessionMonitor {
         }
 
         saver.store(Connection::session().is_ok(), Ordering::SeqCst);
-        let (state, events) = (locked.clone(), sink);
-        spawn_listener("screen-saver", move || watch_screen_saver(state, events));
+        let (state, hint, events) = (locked.clone(), locked_hint.clone(), sink);
+        spawn_listener("screen-saver", move || watch_screen_saver(state, hint, events));
 
-        Self { locked, logind, saver, system, session_path }
+        Self { locked, logind, saver, locked_hint, system, session_path }
     }
 
+    /// Asks `logind` on every sample when it can, so that a missed signal
+    /// corrects itself at the next poll instead of lasting until the next lock.
     pub fn is_locked(&self) -> bool {
+        if self.locked_hint.load(Ordering::SeqCst) {
+            if let (Some(connection), Some(path)) = (&self.system, &self.session_path) {
+                if let Some(value) = read_locked_hint(connection, path) {
+                    self.locked.store(value, Ordering::SeqCst);
+                    return value;
+                }
+            }
+        }
         self.locked.load(Ordering::SeqCst)
     }
 
@@ -159,7 +236,7 @@ impl SessionMonitor {
     pub fn idle_ms(&self) -> Option<i64> {
         let connection = self.system.as_ref()?;
         let path = self.session_path.as_ref()?;
-        let proxy = Proxy::new(connection, LOGIND, path.as_str().to_string(), SESSION).ok()?;
+        let proxy = session_proxy(connection, path).ok()?;
         if !proxy.get_property::<bool>("IdleHint").ok()? {
             return Some(0);
         }
@@ -169,7 +246,7 @@ impl SessionMonitor {
     }
 
     pub fn lock_capability(&self) -> Capability {
-        if self.session_path.is_some() {
+        if self.locked_hint.load(Ordering::SeqCst) {
             Capability::available()
         } else if self.saver.load(Ordering::SeqCst) {
             Capability::limited("Detected from the screen saver only.")
@@ -184,5 +261,37 @@ impl SessionMonitor {
         } else {
             Capability::limited("Sleep is detected from gaps in tracking after waking.")
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use zbus::zvariant::Value;
+
+    fn changed(entries: &[(&str, Value<'_>)]) -> HashMap<String, OwnedValue> {
+        entries.iter().map(|(name, value)| (name.to_string(), value.try_to_owned().unwrap())).collect()
+    }
+
+    #[test]
+    fn the_new_value_is_read_from_the_signal() {
+        let unlocked = changed(&[("LockedHint", Value::from(false))]);
+        assert_eq!(locked_hint_change(SESSION, &unlocked, &[]), HintChange::Value(false));
+        let locked = changed(&[("LockedHint", Value::from(true)), ("IdleHint", Value::from(true))]);
+        assert_eq!(locked_hint_change(SESSION, &locked, &[]), HintChange::Value(true));
+    }
+
+    #[test]
+    fn other_properties_leave_the_lock_state_alone() {
+        let idle = changed(&[("IdleHint", Value::from(true))]);
+        assert_eq!(locked_hint_change(SESSION, &idle, &[]), HintChange::Unrelated);
+        let other = changed(&[("LockedHint", Value::from(true))]);
+        assert_eq!(locked_hint_change("org.freedesktop.login1.User", &other, &[]), HintChange::Unrelated);
+    }
+
+    #[test]
+    fn an_invalidated_hint_is_read_again() {
+        let invalidated = vec!["LockedHint".to_string()];
+        assert_eq!(locked_hint_change(SESSION, &HashMap::new(), &invalidated), HintChange::Invalidated);
     }
 }
