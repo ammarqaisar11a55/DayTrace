@@ -78,21 +78,21 @@ export function SessionDialog({
   return (
     <>
       <Dialog title={sessionTitle(session)} open={!confirming} onClose={onClose}>
-        <p className="mb-4 text-[13px] text-ink-2">
+        <p className="mb-4 text-[13px] text-fg-2">
           {formatDuration(session.endTime - session.startTime)}
           {session.isOpen ? ", still in progress" : ""}
         </p>
         {(session.executablePath || session.windowTitle) && (
-          <dl className="selectable mb-4 space-y-1 text-xs text-ink-2">
+          <dl className="selectable mb-4 space-y-1 text-xs text-fg-2">
             {session.executablePath && (
               <div>
-                <dt className="inline text-ink-3">Program: </dt>
+                <dt className="inline text-fg-3">Program: </dt>
                 <dd className="inline break-all">{session.executablePath}</dd>
               </div>
             )}
             {session.windowTitle && (
               <div>
-                <dt className="inline text-ink-3">Window: </dt>
+                <dt className="inline text-fg-3">Window: </dt>
                 <dd className="inline break-all">{session.windowTitle}</dd>
               </div>
             )}

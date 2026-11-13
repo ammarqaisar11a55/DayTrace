@@ -53,7 +53,7 @@ mod tests {
         let settings = Settings {
             tracking_enabled: true,
             tracking_consent_at: Some(42),
-            theme: Theme::Dark,
+            theme: Theme::Light,
             update_channel: UpdateChannel::Beta,
             idle_threshold_secs: 600,
             ..Settings::default()

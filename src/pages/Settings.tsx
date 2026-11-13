@@ -27,7 +27,7 @@ function Toggle({
     <div className="flex items-start justify-between gap-6 py-2">
       <div>
         <div className="text-[13px]">{label}</div>
-        {hint && <div className="max-w-prose text-xs text-ink-3">{hint}</div>}
+        {hint && <div className="max-w-prose text-xs text-fg-3">{hint}</div>}
       </div>
       <Switch checked={checked} onChange={onChange} label={label} disabled={disabled} />
     </div>
@@ -167,7 +167,7 @@ function Exclusions() {
 
   return (
     <Section title="Never record">
-      <p className="mb-3 text-xs text-ink-3">
+      <p className="mb-3 text-xs text-fg-3">
         Time in these is left out of your history entirely. Adding one does not remove what is already recorded.
       </p>
       <div className="mb-3 flex gap-2">
@@ -199,8 +199,8 @@ function Exclusions() {
       {exclusions.data?.length === 0 && <Empty>Nothing is excluded.</Empty>}
       <ul>
         {(exclusions.data ?? []).map((exclusion) => (
-          <li key={exclusion.id} className="flex items-center gap-3 border-t border-rule py-1 text-[13px]">
-            <span className="w-24 shrink-0 text-xs text-ink-3">{KIND_LABELS[exclusion.kind]}</span>
+          <li key={exclusion.id} className="flex items-center gap-3 border-t border-line py-1 text-[13px]">
+            <span className="w-24 shrink-0 text-xs text-fg-3">{KIND_LABELS[exclusion.kind]}</span>
             <span className="selectable min-w-0 flex-1 truncate">{exclusion.value}</span>
             <IconButton
               label={`Stop excluding ${exclusion.value}`}
@@ -405,7 +405,7 @@ function UpdateSettings() {
       <div className="mb-2 text-[13px]">
         <p>Version {info?.currentVersion}</p>
         {settings.lastUpdateCheck && (
-          <p className="text-xs text-ink-3">Last checked {formatDateTime(settings.lastUpdateCheck)}</p>
+          <p className="text-xs text-fg-3">Last checked {formatDateTime(settings.lastUpdateCheck)}</p>
         )}
       </div>
 
@@ -429,8 +429,8 @@ function UpdateSettings() {
         {state.name === "downloading" && (
           <div className="w-64">
             <div className="mb-1 text-[13px]">Downloading update...{state.percent !== null ? ` ${state.percent}%` : ""}</div>
-            <div className="h-1.5 bg-rule">
-              <div className="h-full bg-pen" style={{ width: `${state.percent ?? 0}%` }} />
+            <div className="h-1.5 bg-line">
+              <div className="h-full bg-primary" style={{ width: `${state.percent ?? 0}%` }} />
             </div>
           </div>
         )}
@@ -455,11 +455,11 @@ function UpdateSettings() {
       </div>
 
       {update?.notes && (
-        <pre className="selectable mb-3 max-h-40 overflow-y-auto rounded-md bg-rule/40 p-3 font-sans text-xs whitespace-pre-wrap">
+        <pre className="selectable mb-3 max-h-40 overflow-y-auto rounded-md bg-line/40 p-3 font-sans text-xs whitespace-pre-wrap">
           {update.notes}
         </pre>
       )}
-      {info?.guidance && <p className="mb-3 max-w-prose text-xs text-ink-2">{info.guidance}</p>}
+      {info?.guidance && <p className="mb-3 max-w-prose text-xs text-fg-2">{info.guidance}</p>}
 
       <div className="py-2">
         <Field label="Update channel" hint="Beta versions arrive sooner and may be less stable.">
@@ -512,7 +512,7 @@ export function SettingsPage() {
   return (
     <>
       <PageHeader title="Settings" />
-      <div role="tablist" aria-label="Settings sections" className="mb-6 flex gap-5 border-b border-rule">
+      <div role="tablist" aria-label="Settings sections" className="mb-6 flex gap-5 border-b border-line">
         {TABS.map(({ id, label }) => (
           <button
             key={id}
@@ -521,7 +521,7 @@ export function SettingsPage() {
             aria-selected={tab === id}
             onClick={() => setTab(id)}
             className={`-mb-px border-b-2 pb-2 text-[13px] transition-colors ${
-              tab === id ? "border-pen font-medium text-ink" : "border-transparent text-ink-2 hover:text-ink"
+              tab === id ? "border-primary font-medium text-fg" : "border-transparent text-fg-2 hover:text-fg"
             }`}
           >
             {label}

@@ -20,8 +20,8 @@ function Figures({ totals }: { totals: Totals }) {
   return (
     <dl className="grid grid-cols-2 gap-y-4 sm:grid-cols-4">
       {figures.map((figure) => (
-        <div key={figure.label} className="border-l border-rule-strong pl-3 first:border-l-2 first:border-pen">
-          <dt className="text-[13px] text-ink-2">{figure.label}</dt>
+        <div key={figure.label} className="border-l border-line-strong pl-3 first:border-l-2 first:border-primary">
+          <dt className="text-[13px] text-fg-2">{figure.label}</dt>
           <dd className={`leading-tight font-semibold tracking-tight ${figure.primary ? "text-[30px]" : "text-[24px]"}`}>
             {formatDuration(figure.value)}
           </dd>
@@ -40,11 +40,11 @@ function RecentSessions({ sessions, onSelect }: { sessions: Session[]; onSelect:
           <button
             type="button"
             onClick={() => onSelect(session)}
-            className="flex w-full items-center gap-2.5 rounded px-1.5 py-1 text-left text-[13px] hover:bg-rule/40"
+            className="flex w-full items-center gap-2.5 rounded px-1.5 py-1 text-left text-[13px] hover:bg-line/40"
           >
-            <span className="w-[62px] shrink-0 whitespace-nowrap text-ink-3">{formatClock(session.startTime)}</span>
+            <span className="w-[62px] shrink-0 whitespace-nowrap text-fg-3">{formatClock(session.startTime)}</span>
             <span className="min-w-0 flex-1 truncate">{sessionTitle(session)}</span>
-            <span className="shrink-0 text-ink-2">{formatDuration(session.endTime - session.startTime)}</span>
+            <span className="shrink-0 text-fg-2">{formatDuration(session.endTime - session.startTime)}</span>
           </button>
         </li>
       ))}

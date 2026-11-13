@@ -6,7 +6,7 @@ import type { Capability, Support } from "../types";
 import { Button } from "./ui";
 
 const SUPPORT: Record<Support, { icon: typeof CircleCheck; label: string; className: string }> = {
-  available: { icon: CircleCheck, label: "Available", className: "text-pen" },
+  available: { icon: CircleCheck, label: "Available", className: "text-primary" },
   limited: { icon: CircleAlert, label: "Limited", className: "text-warn" },
   unavailable: { icon: CircleSlash, label: "Not available", className: "text-danger" },
 };
@@ -19,9 +19,9 @@ function CapabilityRow({ name, capability }: { name: string; capability: Capabil
       <div className="min-w-0 flex-1">
         <div className="flex justify-between gap-3 text-[13px]">
           <span>{name}</span>
-          <span className="shrink-0 text-ink-3">{label}</span>
+          <span className="shrink-0 text-fg-3">{label}</span>
         </div>
-        {capability.detail && <p className="text-xs text-ink-3">{capability.detail}</p>}
+        {capability.detail && <p className="text-xs text-fg-3">{capability.detail}</p>}
       </div>
     </li>
   );
@@ -44,11 +44,11 @@ function ShellIntegration() {
   };
 
   return (
-    <div className="mt-3 rounded-md border border-rule-strong p-3">
+    <div className="mt-3 rounded-md border border-line-strong p-3">
       <h3 className="text-[13px] font-medium">GNOME Shell integration</h3>
       {state === "notInstalled" && (
         <>
-          <p className="mt-1 mb-2.5 text-xs text-ink-2">
+          <p className="mt-1 mb-2.5 text-xs text-fg-2">
             GNOME keeps the focused window private from applications. This small extension, included with DayTrace, tells
             DayTrace which application has focus. Without it, DayTrace records only that you were active.
           </p>
@@ -63,7 +63,7 @@ function ShellIntegration() {
       )}
       {state === "pendingRestart" && (
         <>
-          <p className="mt-1 mb-2.5 text-xs text-ink-2">
+          <p className="mt-1 mb-2.5 text-xs text-fg-2">
             Installed. GNOME loads new extensions at login, so log out and back in to activate it.
           </p>
           <Button disabled={busy} onClick={() => void change(api.removeShellIntegration, "Integration removed")}>
@@ -73,7 +73,7 @@ function ShellIntegration() {
       )}
       {state === "active" && (
         <>
-          <p className="mt-1 mb-2.5 text-xs text-ink-2">Active. DayTrace can see which application has focus.</p>
+          <p className="mt-1 mb-2.5 text-xs text-fg-2">Active. DayTrace can see which application has focus.</p>
           <Button disabled={busy} onClick={() => void change(api.removeShellIntegration, "Integration removed")}>
             Remove integration
           </Button>
@@ -87,14 +87,14 @@ function ShellIntegration() {
 export function CapabilityList() {
   const { status } = useApp();
   const capabilities = status?.capabilities;
-  if (!capabilities) return <p className="text-ink-3">Checking this computer...</p>;
+  if (!capabilities) return <p className="text-fg-3">Checking this computer...</p>;
 
   return (
     <div>
-      <p className="mb-1 text-xs text-ink-3">
+      <p className="mb-1 text-xs text-fg-3">
         {capabilities.desktop} on {capabilities.displayServer}
       </p>
-      <ul className="divide-y divide-rule">
+      <ul className="divide-y divide-line">
         <CapabilityRow name="Focused application" capability={capabilities.foregroundApp} />
         <CapabilityRow name="Program path" capability={capabilities.executablePath} />
         <CapabilityRow name="Window titles" capability={capabilities.windowTitle} />

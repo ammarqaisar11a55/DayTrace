@@ -22,8 +22,8 @@ function dayBounds(key: string): [number, number] {
 }
 
 function segmentColor(session: Session): string {
-  if (session.sessionType === "unknown") return "var(--idle)";
-  return session.categoryColor ?? "var(--pen)";
+  if (session.sessionType === "unknown") return "var(--dt-idle)";
+  return session.categoryColor ?? "var(--dt-primary)";
 }
 
 function buildSegments(sessions: Session[], dayStart: number, dayEnd: number): Segment[] {
@@ -71,8 +71,8 @@ function Ribbon({
 
   return (
     <div className="flex items-center gap-3">
-      {label && <span className="w-14 shrink-0 text-right text-xs text-ink-3">{label}</span>}
-      <div className="relative min-w-0 flex-1 bg-rule/40" style={{ height }}>
+      {label && <span className="w-14 shrink-0 text-right text-xs text-fg-3">{label}</span>}
+      <div className="relative min-w-0 flex-1 bg-line/40" style={{ height }}>
         {segments.map((segment) => {
           const left = ((segment.start - dayStart) / span) * 100;
           const width = ((segment.end - segment.start) / span) * 100;
@@ -98,7 +98,7 @@ function Ribbon({
         {nowPercent !== null && (
           <span
             aria-hidden
-            className="pointer-events-none absolute -inset-y-1 w-0.5 bg-ink"
+            className="pointer-events-none absolute -inset-y-1 w-0.5 bg-fg"
             style={{ left: `${nowPercent}%` }}
           />
         )}
@@ -112,7 +112,7 @@ function HourAxis({ indent }: { indent: boolean }) {
   return (
     <div className="mt-1.5 flex gap-3">
       {indent && <span className="w-14 shrink-0" />}
-      <div className="relative h-4 min-w-0 flex-1 text-[11px] text-ink-3">
+      <div className="relative h-4 min-w-0 flex-1 text-[11px] text-fg-3">
         {hours.map((hour) => (
           <span
             key={hour}
@@ -143,7 +143,7 @@ function Legend({ sessions }: { sessions: Session[] }) {
   }, [sessions]);
 
   return (
-    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
+    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-fg-2">
       {items.categories.map(([name, color]) => (
         <span key={name} className="inline-flex items-center gap-1.5">
           <ColorSwatch color={color} />
@@ -152,13 +152,13 @@ function Legend({ sessions }: { sessions: Session[] }) {
       ))}
       {items.uncategorized && (
         <span className="inline-flex items-center gap-1.5">
-          <ColorSwatch color="var(--pen)" />
+          <ColorSwatch color="var(--dt-primary)" />
           Uncategorized
         </span>
       )}
       {items.unknown && (
         <span className="inline-flex items-center gap-1.5">
-          <ColorSwatch color="var(--idle)" />
+          <ColorSwatch color="var(--dt-idle)" />
           Unidentified
         </span>
       )}
@@ -169,7 +169,7 @@ function Legend({ sessions }: { sessions: Session[] }) {
         </span>
       )}
       <span className="inline-flex items-center gap-1.5">
-        <span aria-hidden className="inline-block size-2.5 rounded-[3px] bg-rule/70" />
+        <span aria-hidden className="inline-block size-2.5 rounded-[3px] bg-line/70" />
         Not recorded
       </span>
     </div>
@@ -229,15 +229,15 @@ export function DayRibbon({
       {hover && (
         <div
           role="status"
-          className="pointer-events-none fixed top-auto z-20 mt-1 max-w-64 -translate-x-1/2 rounded-md border border-rule-strong bg-sheet px-2.5 py-1.5 text-xs"
+          className="pointer-events-none fixed top-auto z-20 mt-1 max-w-64 -translate-x-1/2 rounded-md border border-line-strong bg-surface px-2.5 py-1.5 text-xs"
           style={{ left: hover.x }}
         >
           <div className="font-medium">{sessionTitle(hover.session)}</div>
-          <div className="text-ink-2">
+          <div className="text-fg-2">
             {formatClock(hover.session.startTime)} to {formatClock(hover.session.endTime)},{" "}
             {formatDuration(hover.session.endTime - hover.session.startTime)}
           </div>
-          {hover.session.categoryName && <div className="text-ink-3">{hover.session.categoryName}</div>}
+          {hover.session.categoryName && <div className="text-fg-3">{hover.session.categoryName}</div>}
         </div>
       )}
     </div>

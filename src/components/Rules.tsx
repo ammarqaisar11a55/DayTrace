@@ -200,14 +200,14 @@ function RulePreviewDialog({
 
   return (
     <Dialog title="Preview rule changes" open onClose={onClose} wide>
-      <p className="mb-3 text-[13px] text-ink-2">
+      <p className="mb-3 text-[13px] text-fg-2">
         {preview.changed} of {preview.examined} sessions would change. {preview.skippedManual} sessions you assigned by
         hand stay as they are.
       </p>
       {preview.samples.length > 0 && (
-        <div className="max-h-72 overflow-y-auto border-y border-rule">
+        <div className="max-h-72 overflow-y-auto border-y border-line">
           <table className="w-full text-left text-xs">
-            <thead className="sticky top-0 bg-sheet text-ink-3">
+            <thead className="sticky top-0 bg-surface text-fg-3">
               <tr>
                 <th className="py-1.5 font-medium">Session</th>
                 <th className="py-1.5 font-medium">Now</th>
@@ -216,14 +216,14 @@ function RulePreviewDialog({
             </thead>
             <tbody>
               {preview.samples.map((change) => (
-                <tr key={change.sessionId} className="border-t border-rule">
+                <tr key={change.sessionId} className="border-t border-line">
                   <td className="py-1.5 pr-3">
                     {change.applicationName}
-                    <span className="block text-ink-3">
+                    <span className="block text-fg-3">
                       {formatDateTime(change.startTime)}, {formatDuration(change.durationSeconds * 1000)}
                     </span>
                   </td>
-                  <td className="py-1.5 pr-3 text-ink-2">{categoryName(change.oldCategoryId)}</td>
+                  <td className="py-1.5 pr-3 text-fg-2">{categoryName(change.oldCategoryId)}</td>
                   <td className="py-1.5">{categoryName(change.newCategoryId)}</td>
                 </tr>
               ))}
@@ -299,11 +299,11 @@ export function Rules({ categories }: { categories: Category[] }) {
         <Empty>Rules assign categories automatically as activity is recorded.</Empty>
       ) : (
         <>
-          <p className="mb-2 text-xs text-ink-3">Rules run from the top, and the first match sets the category.</p>
+          <p className="mb-2 text-xs text-fg-3">Rules run from the top, and the first match sets the category.</p>
           <ol className="-mx-2">
             {list.map((rule, index) => (
-              <li key={rule.id} className="flex items-center gap-2 rounded px-2 py-1 hover:bg-rule/40">
-                <span className="w-5 shrink-0 text-right text-xs text-ink-3">{index + 1}</span>
+              <li key={rule.id} className="flex items-center gap-2 rounded px-2 py-1 hover:bg-line/40">
+                <span className="w-5 shrink-0 text-right text-xs text-fg-3">{index + 1}</span>
                 <button
                   type="button"
                   className="min-w-0 flex-1 text-left"
@@ -312,8 +312,8 @@ export function Rules({ categories }: { categories: Category[] }) {
                     setOpen(true);
                   }}
                 >
-                  <span className={`block truncate text-[13px] ${rule.enabled ? "" : "text-ink-3"}`}>{rule.name}</span>
-                  <span className="block truncate text-xs text-ink-3">{targetName(rule)}</span>
+                  <span className={`block truncate text-[13px] ${rule.enabled ? "" : "text-fg-3"}`}>{rule.name}</span>
+                  <span className="block truncate text-xs text-fg-3">{targetName(rule)}</span>
                 </button>
                 <IconButton label="Move up" disabled={index === 0} onClick={() => move(index, -1)}>
                   <ArrowUp size={14} />

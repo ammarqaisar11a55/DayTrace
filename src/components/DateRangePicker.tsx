@@ -22,7 +22,7 @@ export function DateRangePicker({
   const today = toDateKey(new Date());
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div role="group" aria-label="Date range" className="flex rounded-md border border-rule-strong bg-sheet p-0.5">
+      <div role="group" aria-label="Date range" className="flex rounded-md border border-line-strong bg-surface p-0.5">
         {PRESETS.map((preset) => (
           <button
             key={preset.id}
@@ -30,7 +30,7 @@ export function DateRangePicker({
             aria-pressed={value.preset === preset.id}
             onClick={() => onChange({ preset: preset.id, range: presetRange(preset.id) })}
             className={`h-7 rounded px-2.5 text-[13px] transition-colors ${
-              value.preset === preset.id ? "bg-pen font-medium text-on-pen" : "text-ink-2 hover:text-ink"
+              value.preset === preset.id ? "bg-primary font-medium text-on-primary" : "text-fg-2 hover:text-fg"
             }`}
           >
             {preset.label}
@@ -41,7 +41,7 @@ export function DateRangePicker({
           aria-pressed={value.preset === "custom"}
           onClick={() => onChange({ preset: "custom", range: value.range })}
           className={`h-7 rounded px-2.5 text-[13px] transition-colors ${
-            value.preset === "custom" ? "bg-pen font-medium text-on-pen" : "text-ink-2 hover:text-ink"
+            value.preset === "custom" ? "bg-primary font-medium text-on-primary" : "text-fg-2 hover:text-fg"
           }`}
         >
           Custom
@@ -60,7 +60,7 @@ export function DateRangePicker({
               onChange({ preset: "custom", range: { ...value.range, from: event.target.value } })
             }
           />
-          <span className="text-ink-3">to</span>
+          <span className="text-fg-3">to</span>
           <Input
             type="date"
             aria-label="Last day"

@@ -12,9 +12,10 @@ pub const MAX_UPDATE_HOURS: u32 = 168;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Theme {
-    #[default]
     System,
     Light,
+    /// The interface is designed dark first.
+    #[default]
     Dark,
 }
 
@@ -58,7 +59,7 @@ impl Default for Settings {
             idle_threshold_secs: 300,
             collect_window_titles: false,
             retention_days: 0,
-            theme: Theme::System,
+            theme: Theme::Dark,
             start_on_login: false,
             run_in_background: true,
             start_hidden: false,

@@ -42,7 +42,7 @@ function Pages() {
 
 export function App() {
   return (
-    <AppProvider fallback={<div className="h-full bg-paper" />}>
+    <AppProvider fallback={<div className="h-full bg-app" />}>
       <Pages />
     </AppProvider>
   );

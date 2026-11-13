@@ -11,9 +11,9 @@ import {
 type ButtonTone = "primary" | "secondary" | "quiet" | "danger";
 
 const BUTTON_TONES: Record<ButtonTone, string> = {
-  primary: "bg-pen text-on-pen hover:opacity-90",
-  secondary: "border border-rule-strong bg-sheet text-ink hover:bg-paper",
-  quiet: "text-ink-2 hover:bg-rule/60 hover:text-ink",
+  primary: "bg-primary text-on-primary hover:opacity-90",
+  secondary: "border border-line-strong bg-surface text-fg hover:bg-app",
+  quiet: "text-fg-2 hover:bg-line/60 hover:text-fg",
   danger: "border border-danger text-danger hover:bg-danger-soft",
 };
 
@@ -42,13 +42,13 @@ export function IconButton({
       aria-label={label}
       title={label}
       {...props}
-      className={`inline-flex size-8 items-center justify-center rounded-md text-ink-2 transition-colors hover:bg-rule/60 hover:text-ink disabled:opacity-40 ${className}`}
+      className={`inline-flex size-8 items-center justify-center rounded-md text-fg-2 transition-colors hover:bg-line/60 hover:text-fg disabled:opacity-40 ${className}`}
     />
   );
 }
 
 const FIELD_CLASS =
-  "h-8 rounded-md border border-rule-strong bg-sheet px-2.5 text-[13px] text-ink placeholder:text-ink-3 disabled:opacity-50";
+  "h-8 rounded-md border border-line-strong bg-surface px-2.5 text-[13px] text-fg placeholder:text-fg-3 disabled:opacity-50";
 
 /** Fields fill their container unless the caller gives them a width. */
 export function Input({ className = "w-full", ...props }: InputHTMLAttributes<HTMLInputElement>) {
@@ -62,9 +62,9 @@ export function Select({ className = "w-full", ...props }: SelectHTMLAttributes<
 export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[13px] font-medium text-ink">{label}</span>
+      <span className="mb-1 block text-[13px] font-medium text-fg">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-ink-3">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-fg-3">{hint}</span>}
     </label>
   );
 }
@@ -89,7 +89,7 @@ export function Switch({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-        checked ? "bg-pen" : "bg-rule-strong"
+        checked ? "bg-primary" : "bg-line-strong"
       }`}
     >
       <span
@@ -129,7 +129,7 @@ export function Dialog({
       onClose={() => {
         if (open) onClose();
       }}
-      className={`w-[calc(100vw-48px)] rounded-lg border border-rule-strong bg-sheet p-0 ${
+      className={`w-[calc(100vw-48px)] rounded-lg border border-line-strong bg-surface p-0 ${
         wide ? "max-w-2xl" : "max-w-md"
       }`}
     >
@@ -165,7 +165,7 @@ export function ConfirmDialog({
 }) {
   return (
     <Dialog title={title} open={open} onClose={onClose}>
-      <p className="mb-5 text-ink-2">{body}</p>
+      <p className="mb-5 text-fg-2">{body}</p>
       <div className="flex justify-end gap-2">
         <Button onClick={onClose}>Keep it</Button>
         <Button tone="danger" onClick={onConfirm}>
@@ -198,8 +198,8 @@ export function Section({
 }) {
   return (
     <section className={className}>
-      <div className="mb-3 flex items-center justify-between gap-3 border-b border-rule pb-2">
-        <h2 className="text-[13px] font-semibold text-ink">{title}</h2>
+      <div className="mb-3 flex items-center justify-between gap-3 border-b border-line pb-2">
+        <h2 className="text-[13px] font-semibold text-fg">{title}</h2>
         {actions}
       </div>
       {children}
@@ -208,7 +208,7 @@ export function Section({
 }
 
 export function Empty({ children }: { children: ReactNode }) {
-  return <p className="py-6 text-[13px] text-ink-3">{children}</p>;
+  return <p className="py-6 text-[13px] text-fg-3">{children}</p>;
 }
 
 export function ErrorNote({ message }: { message: string }) {
@@ -224,7 +224,7 @@ export function ColorSwatch({ color, size = 10 }: { color: string | null; size?:
     <span
       aria-hidden
       className="inline-block shrink-0 rounded-[3px]"
-      style={{ width: size, height: size, background: color ?? "var(--rule-strong)" }}
+      style={{ width: size, height: size, background: color ?? "var(--dt-border-strong)" }}
     />
   );
 }

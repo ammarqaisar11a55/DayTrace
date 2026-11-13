@@ -16,7 +16,7 @@ import { ColorSwatch, Empty } from "./ui";
 
 const HOUR = 3_600_000;
 const MINUTE = 60_000;
-const AXIS = { fontSize: 11, fill: "var(--ink-3)" };
+const AXIS = { fontSize: 11, fill: "var(--dt-text-muted)" };
 
 interface Point {
   label: string;
@@ -37,10 +37,10 @@ function ChartTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-md border border-rule-strong bg-sheet px-2.5 py-1.5 text-xs">
+    <div className="rounded-md border border-line-strong bg-surface px-2.5 py-1.5 text-xs">
       <div className="mb-0.5 font-medium">{label}</div>
       {payload.map((entry) => (
-        <div key={String(entry.name)} className="flex items-center gap-1.5 text-ink-2">
+        <div key={String(entry.name)} className="flex items-center gap-1.5 text-fg-2">
           <ColorSwatch color={entry.color ?? null} size={8} />
           {String(entry.name)}: {formatDuration(Number(entry.value) * unit)}
         </div>
@@ -51,13 +51,13 @@ function ChartTooltip({
 
 function SeriesLegend() {
   return (
-    <div className="mb-2 flex gap-4 text-xs text-ink-2">
+    <div className="mb-2 flex gap-4 text-xs text-fg-2">
       <span className="inline-flex items-center gap-1.5">
-        <ColorSwatch color="var(--pen)" />
+        <ColorSwatch color="var(--dt-primary)" />
         Active
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <ColorSwatch color="var(--idle)" />
+        <ColorSwatch color="var(--dt-idle)" />
         Idle
       </span>
     </div>
@@ -94,8 +94,8 @@ export function ActivityBars({
       <SeriesLegend />
       <ResponsiveContainer width="100%" height={height}>
         <BarChart data={points} margin={{ top: 4, right: 0, bottom: 0, left: -24 }} barCategoryGap="28%">
-          <CartesianGrid vertical={false} stroke="var(--rule)" />
-          <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: "var(--rule-strong)" }} interval="preserveStartEnd" minTickGap={18} />
+          <CartesianGrid vertical={false} stroke="var(--dt-border)" />
+          <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: "var(--dt-border-strong)" }} interval="preserveStartEnd" minTickGap={18} />
           <YAxis
             tick={AXIS}
             tickLine={false}
@@ -104,9 +104,9 @@ export function ActivityBars({
             allowDecimals={false}
             {...(perHour ? { domain: [0, 60], ticks: [0, 15, 30, 45, 60] } : {})}
           />
-          <Tooltip content={<ChartTooltip unit={unit} />} cursor={{ fill: "var(--rule)", opacity: 0.4 }} />
-          <Bar dataKey="active" name="Active" stackId="time" fill="var(--pen)" isAnimationActive={false} />
-          <Bar dataKey="idle" name="Idle" stackId="time" fill="var(--idle)" radius={[3, 3, 0, 0]} isAnimationActive={false} />
+          <Tooltip content={<ChartTooltip unit={unit} />} cursor={{ fill: "var(--dt-border)", opacity: 0.4 }} />
+          <Bar dataKey="active" name="Active" stackId="time" fill="var(--dt-primary)" isAnimationActive={false} />
+          <Bar dataKey="idle" name="Idle" stackId="time" fill="var(--dt-idle)" radius={[3, 3, 0, 0]} isAnimationActive={false} />
         </BarChart>
       </ResponsiveContainer>
     </figure>
@@ -120,11 +120,11 @@ export function TrendLine({ buckets, height = 220 }: { buckets: Bucket[]; height
     <figure aria-label="Active time per day">
       <ResponsiveContainer width="100%" height={height}>
         <AreaChart data={points} margin={{ top: 4, right: 8, bottom: 0, left: -24 }}>
-          <CartesianGrid vertical={false} stroke="var(--rule)" />
-          <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: "var(--rule-strong)" }} interval="preserveStartEnd" minTickGap={28} />
+          <CartesianGrid vertical={false} stroke="var(--dt-border)" />
+          <XAxis dataKey="label" tick={AXIS} tickLine={false} axisLine={{ stroke: "var(--dt-border-strong)" }} interval="preserveStartEnd" minTickGap={28} />
           <YAxis tick={AXIS} tickLine={false} axisLine={false} tickFormatter={(value: number) => `${value}h`} allowDecimals={false} />
-          <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--rule-strong)" }} />
-          <Area type="linear" dataKey="active" name="Active" stroke="var(--pen)" strokeWidth={2} fill="var(--pen-soft)" fillOpacity={0.7} isAnimationActive={false} activeDot={{ r: 4 }} />
+          <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--dt-border-strong)" }} />
+          <Area type="linear" dataKey="active" name="Active" stroke="var(--dt-primary)" strokeWidth={2} fill="var(--dt-primary-soft)" fillOpacity={0.7} isAnimationActive={false} activeDot={{ r: 4 }} />
         </AreaChart>
       </ResponsiveContainer>
     </figure>
@@ -154,21 +154,21 @@ export function RankedList({
         <li key={`${item.id}-${item.name}`}>
           <div className="mb-1 flex items-baseline justify-between gap-3 text-[13px]">
             <span className="truncate">{item.name}</span>
-            <span className="shrink-0 text-ink-2">{formatDuration(item.ms)}</span>
+            <span className="shrink-0 text-fg-2">{formatDuration(item.ms)}</span>
           </div>
-          <div className="h-1 bg-rule/50">
+          <div className="h-1 bg-line/50">
             <div
               className="h-full rounded-r-[2px]"
               style={{
                 width: `${Math.max((item.ms / top) * 100, 1)}%`,
-                background: useItemColor && item.color ? item.color : "var(--pen)",
+                background: useItemColor && item.color ? item.color : "var(--dt-primary)",
               }}
             />
           </div>
         </li>
       ))}
       {rest > 0 && (
-        <li className="text-xs text-ink-3">
+        <li className="text-xs text-fg-3">
           {items.length - limit} more, {formatDuration(rest)}
         </li>
       )}
@@ -187,17 +187,17 @@ export function ShareBar({ items, empty }: { items: RankedItem[]; empty: string 
             key={`${item.id}-${item.name}`}
             title={`${item.name}: ${formatDuration(item.ms)}`}
             className="first:rounded-l-[3px] last:rounded-r-[3px]"
-            style={{ flexGrow: item.ms, flexBasis: 0, minWidth: 2, background: item.color ?? "var(--pen)" }}
+            style={{ flexGrow: item.ms, flexBasis: 0, minWidth: 2, background: item.color ?? "var(--dt-primary)" }}
           />
         ))}
       </div>
       <ul className="mt-3 space-y-1.5">
         {items.map((item) => (
           <li key={`${item.id}-${item.name}`} className="flex items-center gap-2 text-[13px]">
-            <ColorSwatch color={item.color ?? "var(--pen)"} />
+            <ColorSwatch color={item.color ?? "var(--dt-primary)"} />
             <span className="min-w-0 flex-1 truncate">{item.name}</span>
-            <span className="text-ink-3">{Math.round(item.share * 100)}%</span>
-            <span className="w-16 text-right text-ink-2">{formatDuration(item.ms)}</span>
+            <span className="text-fg-3">{Math.round(item.share * 100)}%</span>
+            <span className="w-16 text-right text-fg-2">{formatDuration(item.ms)}</span>
           </li>
         ))}
       </ul>
@@ -216,7 +216,7 @@ export function HourHeatmap({ cells }: { cells: HourCell[] }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[560px] border-separate border-spacing-0.5 text-[11px] text-ink-3">
+      <table className="w-full min-w-[560px] border-separate border-spacing-0.5 text-[11px] text-fg-3">
         <caption className="sr-only">Active time by weekday and hour</caption>
         <thead>
           <tr>
@@ -244,8 +244,8 @@ export function HourHeatmap({ cells }: { cells: HourCell[] }) {
                     style={{
                       background:
                         ms > 0
-                          ? `color-mix(in oklab, var(--pen) ${Math.round(18 + (ms / peak) * 82)}%, transparent)`
-                          : "color-mix(in oklab, var(--rule) 45%, transparent)",
+                          ? `color-mix(in oklab, var(--dt-primary) ${Math.round(18 + (ms / peak) * 82)}%, transparent)`
+                          : "color-mix(in oklab, var(--dt-border) 45%, transparent)",
                     }}
                   />
                 );

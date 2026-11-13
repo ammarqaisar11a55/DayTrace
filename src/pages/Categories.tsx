@@ -65,7 +65,7 @@ function CategoryDialog({
                 type="color"
                 value={color}
                 onChange={(event) => setColor(event.target.value)}
-                className="h-8 w-12 cursor-pointer rounded-md border border-rule-strong bg-sheet p-0.5"
+                className="h-8 w-12 cursor-pointer rounded-md border border-line-strong bg-surface p-0.5"
               />
             </Field>
           </div>
@@ -134,14 +134,14 @@ export function Categories() {
                   setEditing(category);
                   setDialogOpen(true);
                 }}
-                className="flex w-full items-center gap-3 rounded px-2 py-2 text-left hover:bg-rule/40"
+                className="flex w-full items-center gap-3 rounded px-2 py-2 text-left hover:bg-line/40"
               >
                 <ColorSwatch color={category.color} size={14} />
                 <span className="min-w-0 flex-1 truncate text-[13px]">{category.name}</span>
-                <span className="w-12 text-right text-xs text-ink-3">
+                <span className="w-12 text-right text-xs text-fg-3">
                   {item ? `${Math.round(item.share * 100)}%` : ""}
                 </span>
-                <span className="w-16 text-right text-[13px] text-ink-2">{formatDuration(item?.ms ?? 0)}</span>
+                <span className="w-16 text-right text-[13px] text-fg-2">{formatDuration(item?.ms ?? 0)}</span>
               </button>
             </li>
           );

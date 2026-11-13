@@ -108,9 +108,9 @@ function GroupRow({ group, onSelect }: { group: SessionGroup; onSelect: (session
         type="button"
         aria-expanded={repeated ? expanded : undefined}
         onClick={() => (repeated ? setExpanded(!expanded) : onSelect(first))}
-        className="flex w-full items-center gap-3 rounded px-2 py-1.5 text-left hover:bg-rule/40"
+        className="flex w-full items-center gap-3 rounded px-2 py-1.5 text-left hover:bg-line/40"
       >
-        <span className="w-[62px] shrink-0 text-xs whitespace-nowrap text-ink-3">{formatClock(group.startTime)}</span>
+        <span className="w-[62px] shrink-0 text-xs whitespace-nowrap text-fg-3">{formatClock(group.startTime)}</span>
         <span
           aria-hidden
           className={`h-7 w-1 shrink-0 rounded-sm ${away ? "hatch-idle" : ""}`}
@@ -118,8 +118,8 @@ function GroupRow({ group, onSelect }: { group: SessionGroup; onSelect: (session
             background: away
               ? undefined
               : first.sessionType === "unknown"
-                ? "var(--idle)"
-                : (first.categoryColor ?? "var(--pen)"),
+                ? "var(--dt-idle)"
+                : (first.categoryColor ?? "var(--dt-primary)"),
           }}
         />
         {first.sessionType === "active" ? (
@@ -128,26 +128,26 @@ function GroupRow({ group, onSelect }: { group: SessionGroup; onSelect: (session
           <span className="size-5 shrink-0" />
         )}
         <span className="min-w-0 flex-1">
-          <span className={`block truncate text-[13px] ${away ? "text-ink-3" : ""}`}>{group.title}</span>
+          <span className={`block truncate text-[13px] ${away ? "text-fg-3" : ""}`}>{group.title}</span>
           {(first.categoryName || first.label) && (
-            <span className="block truncate text-xs text-ink-3">
+            <span className="block truncate text-xs text-fg-3">
               {[first.sessionType === "manual" ? null : first.label, first.categoryName]
                 .filter(Boolean)
                 .join(", ")}
             </span>
           )}
         </span>
-        {repeated && <span className="text-xs text-ink-3">{group.sessions.length} sessions</span>}
-        <span className="w-16 shrink-0 text-right text-[13px] text-ink-2">{formatDuration(group.totalMs)}</span>
+        {repeated && <span className="text-xs text-fg-3">{group.sessions.length} sessions</span>}
+        <span className="w-16 shrink-0 text-right text-[13px] text-fg-2">{formatDuration(group.totalMs)}</span>
       </button>
       {expanded && (
-        <ul className="mb-1 ml-[86px] border-l border-rule pl-3">
+        <ul className="mb-1 ml-[86px] border-l border-line pl-3">
           {group.sessions.map((session) => (
             <li key={session.id}>
               <button
                 type="button"
                 onClick={() => onSelect(session)}
-                className="flex w-full justify-between rounded px-2 py-1 text-left text-xs text-ink-2 hover:bg-rule/40"
+                className="flex w-full justify-between rounded px-2 py-1 text-left text-xs text-fg-2 hover:bg-line/40"
               >
                 <span>
                   {formatClock(session.startTime)} to {formatClock(session.endTime)}

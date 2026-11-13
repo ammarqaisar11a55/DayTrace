@@ -1,83 +1,160 @@
 @import "tailwindcss";
 
-/* Colors are roles, swapped for dark mode in one place. The palette follows a
-   chart recorder: cool paper, dark ink, and one teal pen for what was recorded. */
+/* Design tokens. Every color in the interface comes from here, so a theme is
+   one block of values. The app is dark first; light keeps the same purple
+   identity on pale surfaces. Muted text is a step lighter than the brand
+   sheet's #81788D, which falls below 4.5:1 on cards. */
 :root {
-  color-scheme: light;
-  --paper: #f1f4f2;
-  --sheet: #fbfcfb;
-  --ink: #16211f;
-  --ink-2: #47544f;
-  --ink-3: #5f6c68;
-  --rule: #d6ded9;
-  --rule-strong: #b4c0ba;
-  --pen: #0b6e64;
-  --pen-soft: #d4e8e3;
-  --on-pen: #ffffff;
-  --idle: #8d9a95;
-  --danger: #b3261e;
-  --danger-soft: #f9e0dd;
-  --warn: #8a5a00;
-  --warn-soft: #f6ead0;
-}
-
-:root[data-theme="dark"] {
   color-scheme: dark;
-  --paper: #121a19;
-  --sheet: #182321;
-  --ink: #e6edea;
-  --ink-2: #aebdb8;
-  --ink-3: #93a29d;
-  --rule: #2b3836;
-  --rule-strong: #43534f;
-  --pen: #52c4b1;
-  --pen-soft: #1f3a36;
-  --on-pen: #0c1f1c;
-  --idle: #6d7c78;
-  --danger: #f2998f;
-  --danger-soft: #3d2320;
-  --warn: #e5bb6b;
-  --warn-soft: #36301f;
+  --dt-primary: #8b20e8;
+  --dt-primary-hover: #a13aff;
+  --dt-primary-bright: #bd65ff;
+  --dt-primary-deep: #6200b8;
+  --dt-lavender: #d7b4ff;
+  /* Purple that is readable as text or a thin line on this theme's surfaces. */
+  --dt-accent: #bd65ff;
+  --dt-primary-soft: #2b1b3d;
+  --dt-on-primary: #ffffff;
+
+  --dt-bg: #111114;
+  --dt-sidebar: #17161b;
+  --dt-surface: #1d1b22;
+  --dt-surface-elevated: #25222b;
+  --dt-surface-hover: #302a38;
+
+  --dt-border: #342d3d;
+  --dt-border-strong: #463d52;
+
+  --dt-text-primary: #f5f2f8;
+  --dt-text-secondary: #b7afc1;
+  --dt-text-muted: #918a9c;
+  --dt-text-disabled: #625b6a;
+
+  --dt-idle: #6b6475;
+  --dt-success: #39c98a;
+  --dt-warning: #f4b860;
+  --dt-warning-soft: #33291a;
+  --dt-error: #f16c82;
+  --dt-error-soft: #3a1e26;
+  --dt-info: #7da8ff;
+
+  --dt-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
+  --dt-shadow-md: 0 8px 24px rgb(0 0 0 / 0.35), 0 1px 3px rgb(0 0 0 / 0.3);
+  --dt-backdrop: rgb(8 6 12 / 0.6);
+
+  --dt-gradient: linear-gradient(135deg, #6200b8 0%, #8b20e8 48%, #bd65ff 100%);
+
+  --dt-radius-sm: 6px;
+  --dt-radius-md: 10px;
+  --dt-radius-lg: 14px;
+  --dt-radius-xl: 18px;
+
+  --dt-transition-fast: 120ms;
+  --dt-transition-normal: 180ms;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    color-scheme: dark;
-    --paper: #121a19;
-    --sheet: #182321;
-    --ink: #e6edea;
-    --ink-2: #aebdb8;
-    --ink-3: #93a29d;
-    --rule: #2b3836;
-    --rule-strong: #43534f;
-    --pen: #52c4b1;
-    --pen-soft: #1f3a36;
-    --on-pen: #0c1f1c;
-    --idle: #6d7c78;
-    --danger: #f2998f;
-    --danger-soft: #3d2320;
-    --warn: #e5bb6b;
-    --warn-soft: #36301f;
+:root[data-theme="light"] {
+  color-scheme: light;
+  --dt-accent: #7a14d9;
+  --dt-primary-soft: #f1e6fd;
+  --dt-bg: #f6f4f9;
+  --dt-sidebar: #eeeaf4;
+  --dt-surface: #ffffff;
+  --dt-surface-elevated: #ffffff;
+  --dt-surface-hover: #eae4f2;
+  --dt-border: #e1d9ea;
+  --dt-border-strong: #cbc0d8;
+  --dt-text-primary: #1a1520;
+  --dt-text-secondary: #564c62;
+  --dt-text-muted: #6e6479;
+  --dt-text-disabled: #a39bad;
+  --dt-idle: #9c93a8;
+  --dt-success: #1b7f55;
+  --dt-warning: #8a5a00;
+  --dt-warning-soft: #f8ecd4;
+  --dt-error: #c2334d;
+  --dt-error-soft: #fbe3e7;
+  --dt-info: #2d5fc4;
+  --dt-shadow-sm: 0 1px 2px rgb(40 20 60 / 0.06);
+  --dt-shadow-md: 0 8px 24px rgb(40 20 60 / 0.12), 0 1px 3px rgb(40 20 60 / 0.08);
+  --dt-backdrop: rgb(30 20 40 / 0.35);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:where(:not([data-theme="dark"])) {
+    color-scheme: light;
+    --dt-accent: #7a14d9;
+    --dt-primary-soft: #f1e6fd;
+    --dt-bg: #f6f4f9;
+    --dt-sidebar: #eeeaf4;
+    --dt-surface: #ffffff;
+    --dt-surface-elevated: #ffffff;
+    --dt-surface-hover: #eae4f2;
+    --dt-border: #e1d9ea;
+    --dt-border-strong: #cbc0d8;
+    --dt-text-primary: #1a1520;
+    --dt-text-secondary: #564c62;
+    --dt-text-muted: #6e6479;
+    --dt-text-disabled: #a39bad;
+    --dt-idle: #9c93a8;
+    --dt-success: #1b7f55;
+    --dt-warning: #8a5a00;
+    --dt-warning-soft: #f8ecd4;
+    --dt-error: #c2334d;
+    --dt-error-soft: #fbe3e7;
+    --dt-info: #2d5fc4;
+    --dt-shadow-sm: 0 1px 2px rgb(40 20 60 / 0.06);
+    --dt-shadow-md: 0 8px 24px rgb(40 20 60 / 0.12), 0 1px 3px rgb(40 20 60 / 0.08);
+    --dt-backdrop: rgb(30 20 40 / 0.35);
   }
 }
 
 @theme inline {
-  --font-sans: "IBM Plex Sans Variable", system-ui, sans-serif;
-  --color-paper: var(--paper);
-  --color-sheet: var(--sheet);
-  --color-ink: var(--ink);
-  --color-ink-2: var(--ink-2);
-  --color-ink-3: var(--ink-3);
-  --color-rule: var(--rule);
-  --color-rule-strong: var(--rule-strong);
-  --color-pen: var(--pen);
-  --color-pen-soft: var(--pen-soft);
-  --color-on-pen: var(--on-pen);
-  --color-idle: var(--idle);
-  --color-danger: var(--danger);
-  --color-danger-soft: var(--danger-soft);
-  --color-warn: var(--warn);
-  --color-warn-soft: var(--warn-soft);
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+
+  --color-primary: var(--dt-primary);
+  --color-primary-hover: var(--dt-primary-hover);
+  --color-primary-bright: var(--dt-primary-bright);
+  --color-primary-deep: var(--dt-primary-deep);
+  --color-primary-soft: var(--dt-primary-soft);
+  --color-lavender: var(--dt-lavender);
+  --color-accent: var(--dt-accent);
+  --color-on-primary: var(--dt-on-primary);
+
+  --color-app: var(--dt-bg);
+  --color-sidebar: var(--dt-sidebar);
+  --color-surface: var(--dt-surface);
+  --color-elevated: var(--dt-surface-elevated);
+  --color-hover: var(--dt-surface-hover);
+  --color-line: var(--dt-border);
+  --color-line-strong: var(--dt-border-strong);
+
+  --color-fg: var(--dt-text-primary);
+  --color-fg-2: var(--dt-text-secondary);
+  --color-fg-3: var(--dt-text-muted);
+  --color-fg-disabled: var(--dt-text-disabled);
+
+  --color-idle: var(--dt-idle);
+  --color-success: var(--dt-success);
+  --color-warn: var(--dt-warning);
+  --color-warn-soft: var(--dt-warning-soft);
+  --color-danger: var(--dt-error);
+  --color-danger-soft: var(--dt-error-soft);
+  --color-info: var(--dt-info);
+
+  --radius-sm: var(--dt-radius-sm);
+  --radius-md: var(--dt-radius-md);
+  --radius-lg: var(--dt-radius-lg);
+  --radius-xl: var(--dt-radius-xl);
+
+  --shadow-sm: var(--dt-shadow-sm);
+  --shadow-md: var(--dt-shadow-md);
+
+  --default-transition-duration: var(--dt-transition-fast);
+}
+
+@utility bg-brand {
+  background-image: var(--dt-gradient);
 }
 
 html,
@@ -87,14 +164,16 @@ body,
 }
 
 body {
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--dt-bg);
+  color: var(--dt-text-primary);
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.5;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "cv11";
   -webkit-font-smoothing: antialiased;
   user-select: none;
+  overflow: hidden;
 }
 
 /* Recorded text should be copyable even though app chrome is not. */
@@ -105,16 +184,16 @@ textarea,
 }
 
 :focus-visible {
-  outline: 2px solid var(--pen);
+  outline: 2px solid var(--dt-accent);
   outline-offset: 2px;
-  border-radius: 3px;
+  border-radius: var(--dt-radius-sm);
 }
 
 /* Idle time is hatched so that it never depends on color alone. */
 .hatch-idle {
   background-image: repeating-linear-gradient(
     135deg,
-    var(--idle) 0 1.5px,
+    var(--dt-idle) 0 1.5px,
     transparent 1.5px 4px
   );
 }
@@ -125,7 +204,13 @@ dialog {
 }
 
 dialog::backdrop {
-  background: rgb(10 18 17 / 0.45);
+  background: var(--dt-backdrop);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  opacity: 0.6;
+  cursor: pointer;
 }
 
 ::-webkit-scrollbar {
@@ -133,10 +218,29 @@ dialog::backdrop {
   height: 10px;
 }
 
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 ::-webkit-scrollbar-thumb {
-  background: var(--rule-strong);
-  border: 3px solid var(--paper);
+  background: var(--dt-border-strong);
+  border: 3px solid transparent;
+  background-clip: padding-box;
   border-radius: 6px;
+}
+
+@keyframes dt-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(189 101 255 / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgb(189 101 255 / 0);
+  }
+}
+
+.live-pulse {
+  animation: dt-pulse 2.4s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -144,6 +248,7 @@ dialog::backdrop {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

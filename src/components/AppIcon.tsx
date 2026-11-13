@@ -35,7 +35,7 @@ export function AppIcon({ id, name, size = 20 }: { id: number | null; name: stri
   return (
     <span
       aria-hidden
-      className="inline-flex shrink-0 items-center justify-center rounded bg-rule font-semibold text-ink-2"
+      className="inline-flex shrink-0 items-center justify-center rounded bg-line font-semibold text-fg-2"
       style={{ width: size, height: size, fontSize: size * 0.5 }}
     >
       {name.charAt(0).toUpperCase()}

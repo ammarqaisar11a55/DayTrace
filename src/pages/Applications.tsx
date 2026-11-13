@@ -64,7 +64,7 @@ function EditDialog({
     <>
       <Dialog title={application.displayName ?? application.name} open={!confirming} onClose={onClose}>
         {application.executablePath && (
-          <p className="selectable mb-4 text-xs break-all text-ink-3">{application.executablePath}</p>
+          <p className="selectable mb-4 text-xs break-all text-fg-3">{application.executablePath}</p>
         )}
         <div className="space-y-3">
           <Field label="Display name">
@@ -130,20 +130,20 @@ export function Applications() {
               <button
                 type="button"
                 onClick={() => setEditing(application)}
-                className="flex w-full items-center gap-3 rounded px-2 py-2 text-left hover:bg-rule/40"
+                className="flex w-full items-center gap-3 rounded px-2 py-2 text-left hover:bg-line/40"
               >
                 <AppIcon id={application.id} name={name} size={24} />
                 <span className="w-56 min-w-0 shrink-0">
                   <span className="block truncate text-[13px]">{name}</span>
-                  <span className="block truncate text-xs text-ink-3">{categoryName(application.defaultCategoryId) ?? "No default category"}</span>
+                  <span className="block truncate text-xs text-fg-3">{categoryName(application.defaultCategoryId) ?? "No default category"}</span>
                 </span>
-                <span className="h-1 min-w-0 flex-1 bg-rule/50">
+                <span className="h-1 min-w-0 flex-1 bg-line/50">
                   <span
-                    className="block h-full rounded-r-[2px] bg-pen"
+                    className="block h-full rounded-r-[2px] bg-primary"
                     style={{ width: `${(application.totalMs / top) * 100}%` }}
                   />
                 </span>
-                <span className="w-16 shrink-0 text-right text-[13px] text-ink-2">
+                <span className="w-16 shrink-0 text-right text-[13px] text-fg-2">
                   {formatDuration(application.totalMs)}
                 </span>
               </button>

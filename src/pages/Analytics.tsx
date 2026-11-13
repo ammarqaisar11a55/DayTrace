@@ -13,32 +13,32 @@ function ActiveIdleSplit({ totals }: { totals: Totals }) {
   return (
     <div>
       <div className="flex h-3 gap-0.5" role="img" aria-label={`${activeShare}% active, ${100 - activeShare}% idle`}>
-        <div className="rounded-l-[3px] bg-pen" style={{ flexGrow: totals.activeMs, flexBasis: 0 }} />
+        <div className="rounded-l-[3px] bg-primary" style={{ flexGrow: totals.activeMs, flexBasis: 0 }} />
         <div className="hatch-idle rounded-r-[3px]" style={{ flexGrow: totals.idleMs, flexBasis: 0 }} />
       </div>
       <dl className="mt-3 space-y-1 text-[13px]">
         <div className="flex justify-between">
-          <dt className="text-ink-2">Active</dt>
+          <dt className="text-fg-2">Active</dt>
           <dd>{formatDuration(totals.activeMs)}</dd>
         </div>
         <div className="flex justify-between">
-          <dt className="text-ink-2">Idle or locked</dt>
+          <dt className="text-fg-2">Idle or locked</dt>
           <dd>{formatDuration(totals.idleMs)}</dd>
         </div>
         {totals.unknownMs > 0 && (
           <div className="flex justify-between">
-            <dt className="text-ink-2">Active, application unidentified</dt>
+            <dt className="text-fg-2">Active, application unidentified</dt>
             <dd>{formatDuration(totals.unknownMs)}</dd>
           </div>
         )}
         {totals.manualMs > 0 && (
           <div className="flex justify-between">
-            <dt className="text-ink-2">Timers and manual entries</dt>
+            <dt className="text-fg-2">Timers and manual entries</dt>
             <dd>{formatDuration(totals.manualMs)}</dd>
           </div>
         )}
         <div className="flex justify-between">
-          <dt className="text-ink-2">Not recorded</dt>
+          <dt className="text-fg-2">Not recorded</dt>
           <dd>{formatDuration(totals.untrackedMs)}</dd>
         </div>
       </dl>
@@ -49,7 +49,7 @@ function ActiveIdleSplit({ totals }: { totals: Totals }) {
 function MonthlyTable({ months }: { months: Bucket[] }) {
   return (
     <table className="w-full text-left text-[13px]">
-      <thead className="text-xs text-ink-3">
+      <thead className="text-xs text-fg-3">
         <tr>
           <th scope="col" className="pb-1.5 font-medium">
             Month
@@ -64,12 +64,12 @@ function MonthlyTable({ months }: { months: Bucket[] }) {
       </thead>
       <tbody>
         {months.map((month) => (
-          <tr key={month.key} className="border-t border-rule">
+          <tr key={month.key} className="border-t border-line">
             <td className="py-1.5">
               {parseDateKey(`${month.key}-01`).toLocaleDateString(undefined, { month: "long", year: "numeric" })}
             </td>
             <td className="py-1.5 text-right">{formatDuration(month.activeMs)}</td>
-            <td className="py-1.5 text-right text-ink-2">{formatDuration(month.idleMs)}</td>
+            <td className="py-1.5 text-right text-fg-2">{formatDuration(month.idleMs)}</td>
           </tr>
         ))}
       </tbody>
@@ -118,7 +118,7 @@ export function Analytics() {
             <ShareBar items={data.categories} empty="No categorized activity in this period." />
           </Section>
           <Section title="When you were active" className="lg:col-span-2">
-            <p className="mb-2 text-xs text-ink-3">
+            <p className="mb-2 text-xs text-fg-3">
               Darker hours hold more active time. Choose categories to see when you did that kind of work.
             </p>
             <div className="mb-3 flex flex-wrap gap-1.5">
@@ -131,7 +131,7 @@ export function Analytics() {
                     aria-pressed={chosen}
                     onClick={() => toggleFocus(category.id)}
                     className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-xs transition-colors ${
-                      chosen ? "border-pen bg-pen-soft text-ink" : "border-rule-strong text-ink-2 hover:text-ink"
+                      chosen ? "border-primary bg-primary-soft text-fg" : "border-line-strong text-fg-2 hover:text-fg"
                     }`}
                   >
                     <ColorSwatch color={category.color} size={8} />

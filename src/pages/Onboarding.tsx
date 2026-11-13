@@ -8,8 +8,8 @@ function Bullets({ items }: { items: string[] }) {
   return (
     <ul className="space-y-1.5">
       {items.map((item) => (
-        <li key={item} className="flex gap-2 text-ink-2">
-          <span aria-hidden className="mt-[9px] size-1 shrink-0 rounded-full bg-pen" />
+        <li key={item} className="flex gap-2 text-fg-2">
+          <span aria-hidden className="mt-[9px] size-1 shrink-0 rounded-full bg-primary" />
           {item}
         </li>
       ))}
@@ -21,7 +21,7 @@ const STEPS: { title: string; body: ReactNode }[] = [
   {
     title: "DayTrace records how you use your computer",
     body: (
-      <p className="text-ink-2">
+      <p className="text-fg-2">
         It notes which application has focus and for how long, and when you step away. There are no timers to start and
         nothing to remember.
       </p>
@@ -30,7 +30,7 @@ const STEPS: { title: string; body: ReactNode }[] = [
   {
     title: "See where your time went",
     body: (
-      <p className="text-ink-2">
+      <p className="text-fg-2">
         You get an honest record of each day: which applications you used, how your time divided between categories, and
         how your habits change. DayTrace shows the numbers and leaves the judgement to you.
       </p>
@@ -61,14 +61,14 @@ const STEPS: { title: string; body: ReactNode }[] = [
             "Browser history",
           ]}
         />
-        <p className="mt-3 text-ink-2">Window titles can contain private details, so they stay off unless you turn them on.</p>
+        <p className="mt-3 text-fg-2">Window titles can contain private details, so they stay off unless you turn them on.</p>
       </>
     ),
   },
   {
     title: "Your data stays on this computer",
     body: (
-      <p className="text-ink-2">
+      <p className="text-fg-2">
         Everything is kept in a local database. There is no account, no cloud service and no telemetry. You can export or
         delete your history at any time from Settings. The only network request DayTrace makes is its update check, which
         you can turn off.
@@ -97,7 +97,7 @@ export function Onboarding() {
       <div className="w-full max-w-lg">
         <div className="mb-6 flex gap-1" role="progressbar" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={step + 1} aria-label="Setup progress">
           {STEPS.map((item, index) => (
-            <span key={item.title} className={`h-1 flex-1 rounded-sm ${index <= step ? "bg-pen" : "bg-rule"}`} />
+            <span key={item.title} className={`h-1 flex-1 rounded-sm ${index <= step ? "bg-primary" : "bg-line"}`} />
           ))}
         </div>
         <h1 className="mb-3 text-[22px] leading-tight font-semibold tracking-tight">{current.title}</h1>
@@ -105,7 +105,7 @@ export function Onboarding() {
 
         {last ? (
           <div className="mt-6">
-            <p className="mb-3 text-ink-2">
+            <p className="mb-3 text-fg-2">
               Automatic tracking stays off until you turn it on. You can change this later in Settings, and pause it at
               any time.
             </p>

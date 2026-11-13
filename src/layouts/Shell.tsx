@@ -99,7 +99,7 @@ function ManualTimerDialog({ open, onClose }: { open: boolean; onClose: () => vo
             <CategoryOptions categories={categories} />
           </Select>
         </Field>
-        <p className="text-xs text-ink-3">
+        <p className="text-xs text-fg-3">
           A timer replaces automatic tracking and keeps counting while you are away from the keyboard.
         </p>
         <div className="flex justify-end gap-2">
@@ -122,16 +122,16 @@ function StatusPanel() {
   const canPause = settings.trackingEnabled && state !== "paused" && state !== "manual";
 
   return (
-    <div className="border-t border-rule px-3 py-3">
+    <div className="border-t border-line px-3 py-3">
       <div className="mb-2.5 flex items-start gap-2 px-1" aria-live="polite">
         <span
           aria-hidden
-          className={`mt-1.5 size-2 shrink-0 rounded-full ${summary.live ? "bg-pen" : "bg-rule-strong"}`}
+          className={`mt-1.5 size-2 shrink-0 rounded-full ${summary.live ? "bg-primary" : "bg-line-strong"}`}
         />
         <div className="min-w-0">
           <div className="text-[13px] leading-tight font-medium">{summary.title}</div>
-          {summary.detail && <div className="truncate text-xs text-ink-3">{summary.detail}</div>}
-          {state === "manual" && <div className="text-xs text-ink-2">{formatDuration(elapsed)}</div>}
+          {summary.detail && <div className="truncate text-xs text-fg-3">{summary.detail}</div>}
+          {state === "manual" && <div className="text-xs text-fg-2">{formatDuration(elapsed)}</div>}
         </div>
       </div>
       <div className="flex gap-1.5">
@@ -174,7 +174,7 @@ function Toasts() {
           className={`max-w-sm rounded-md border px-3 py-2 text-[13px] ${
             toast.tone === "error"
               ? "border-danger bg-danger-soft text-danger"
-              : "border-rule-strong bg-sheet text-ink"
+              : "border-line-strong bg-surface text-fg"
           }`}
         >
           {toast.message}
@@ -187,7 +187,7 @@ function Toasts() {
 export function Shell({ page, children }: { page: PageId; children: ReactNode }) {
   return (
     <div className="flex h-full">
-      <aside className="flex w-52 shrink-0 flex-col border-r border-rule">
+      <aside className="flex w-52 shrink-0 flex-col border-r border-line">
         <div className="px-4 pt-4 pb-3">
           <span className="text-[17px] font-semibold tracking-tight">DayTrace</span>
         </div>
@@ -198,7 +198,7 @@ export function Shell({ page, children }: { page: PageId; children: ReactNode })
               href={`#${id}`}
               aria-current={page === id ? "page" : undefined}
               className={`flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13px] transition-colors ${
-                page === id ? "bg-pen-soft font-medium text-ink" : "text-ink-2 hover:bg-rule/50 hover:text-ink"
+                page === id ? "bg-primary-soft font-medium text-fg" : "text-fg-2 hover:bg-line/50 hover:text-fg"
               }`}
             >
               <Icon size={15} strokeWidth={1.75} />
