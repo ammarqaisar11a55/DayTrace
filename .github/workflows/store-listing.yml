@@ -31,9 +31,9 @@ jobs:
             python3 .github/scripts/store_listing.py --check
           else
             python3 .github/scripts/store_listing.py src-tauri/icons/128x128@2x.png \
-              docs/screenshots/dashboard-today.png \
-              docs/screenshots/timeline.png \
+              docs/screenshots/dashboard-day.png \
+              docs/screenshots/timeline-day.png \
               docs/screenshots/applications.png \
               docs/screenshots/analytics-light.png \
-              docs/screenshots/dashboard-month.png
+              docs/screenshots/dashboard-30-days.png
           fi

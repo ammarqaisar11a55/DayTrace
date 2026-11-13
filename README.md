@@ -8,11 +8,11 @@ DayTrace records how you use your computer, without timers. It answers three que
 
 Everything stays on your computer. There is no account, no cloud service and no telemetry.
 
-![The dashboard for one day, with its ribbon of recorded sessions](docs/screenshots/dashboard-today.png)
+![The dashboard for one day, with its ribbon of recorded sessions](docs/screenshots/dashboard-day.png)
 
-![Thirty days as a stack of daily ribbons](docs/screenshots/dashboard-month.png)
+![Thirty days as a stack of daily ribbons](docs/screenshots/dashboard-30-days.png)
 
-![The timeline of a day, with sessions grouped and ready to correct](docs/screenshots/timeline.png)
+![The timeline of a day, with sessions grouped and ready to correct](docs/screenshots/timeline-day.png)
 
 ![Applications with search, sorting and each one's share of tracked time](docs/screenshots/applications.png)
 
